@@ -1,0 +1,13 @@
+# Core dependencies
+msal>=1.28.0  # Microsoft Authentication Library for Python
+requests>=2.31.0  # HTTP library for API calls
+
+# Optional dependencies for enhanced functionality
+python-dotenv>=1.0.0  # Environment variable management
+
+# Development dependencies (optional)
+pytest>=7.4.0  # Testing framework
+pytest-cov>=4.1.0  # Code coverage
+black>=23.0.0  # Code formatting
+flake8>=6.0.0  # Linting
+mypy>=1.5.0  # Type checking

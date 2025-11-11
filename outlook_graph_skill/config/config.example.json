@@ -1,0 +1,23 @@
+{
+  "auth": {
+    "client_id": "YOUR_AZURE_CLIENT_ID",
+    "tenant_id": "YOUR_AZURE_TENANT_ID",
+    "client_secret": "YOUR_AZURE_CLIENT_SECRET",
+    "authority": "https://login.microsoftonline.com/YOUR_TENANT_ID",
+    "scopes": [
+      "https://graph.microsoft.com/.default"
+    ]
+  },
+  "api": {
+    "base_url": "https://graph.microsoft.com",
+    "api_version": "v1.0",
+    "timeout": 30,
+    "max_retries": 3,
+    "retry_backoff_factor": 2.0
+  },
+  "cache": {
+    "enabled": true,
+    "cache_dir": ".cache",
+    "cache_file_name": "token_cache.bin"
+  }
+}
