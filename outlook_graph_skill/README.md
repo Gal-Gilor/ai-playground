@@ -5,12 +5,13 @@ Enterprise-grade Python skill for interacting with Microsoft Outlook through the
 ## Features
 
 - **Enterprise OAuth2 Authentication** - Secure authentication using Microsoft Authentication Library (MSAL)
+- **Pydantic-Powered Configuration** - Automatic .env loading, validation, and type safety with Pydantic Settings
 - **Token Caching** - Automatic token caching and refresh for optimal performance
 - **Email Operations** - Send, read, search, and manage emails
 - **Advanced Search** - Flexible search with multiple criteria and filters
 - **Attachment Support** - Handle email attachments
 - **Error Handling** - Comprehensive error handling with retry logic
-- **Type Safety** - Full type hints and validation
+- **Type Safety** - Full type hints and validation throughout
 - **Security Best Practices** - Input validation, sanitization, and secure credential management
 
 ## Prerequisites
@@ -65,19 +66,22 @@ pip install -r requirements.txt
 
 - `msal>=1.28.0` - Microsoft Authentication Library
 - `requests>=2.31.0` - HTTP library
-- `python-dotenv>=1.0.0` - Environment variable management (optional)
+- `pydantic>=2.0.0` - Data validation and settings management
+- `pydantic-settings>=2.0.0` - Settings management with automatic .env loading
 
 ## Configuration
 
-### Option 1: Environment Variables (Recommended)
+This skill uses **Pydantic Settings** for robust, validated configuration with automatic .env file loading.
 
-Create a `.env` file or set environment variables:
+### Option 1: Automatic .env Loading (Recommended)
+
+Create a `.env` file in your project root:
 
 ```bash
-export AZURE_CLIENT_ID="your-application-id"
-export AZURE_TENANT_ID="your-tenant-id"
-export AZURE_CLIENT_SECRET="your-client-secret"
-export GRAPH_API_SCOPES="https://graph.microsoft.com/.default"
+AZURE_CLIENT_ID=your-application-id
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_SECRET=your-client-secret
+GRAPH_API_SCOPES=https://graph.microsoft.com/.default
 ```
 
 Then in your code:
@@ -85,8 +89,43 @@ Then in your code:
 ```python
 from outlook_graph_skill import SkillConfig, EmailClient
 
-config = SkillConfig.from_env()
+# Automatically loads from .env file - no from_env() needed!
+config = SkillConfig()
 client = EmailClient(config)
+```
+
+**Backwards Compatible:** The old `SkillConfig.from_env()` method still works:
+
+```python
+config = SkillConfig.from_env()  # Still works!
+```
+
+### Advanced Configuration
+
+**Nested settings** using double underscore delimiter:
+
+```bash
+# .env file
+API__TIMEOUT=60
+API__MAX_RETRIES=5
+CACHE__ENABLED=true
+CACHE__CACHE_DIR=/tmp/cache
+```
+
+**Programmatic overrides:**
+
+```python
+config = SkillConfig(
+    api__timeout=120,      # Override API timeout
+    cache__enabled=False   # Disable cache
+)
+```
+
+**Multiple environment files:**
+
+```python
+# Load from specific .env file
+config = SkillConfig(_env_file='.env.production')
 ```
 
 ### Option 2: JSON Configuration

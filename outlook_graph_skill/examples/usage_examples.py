@@ -20,13 +20,51 @@ def example_basic_setup():
     # - AZURE_TENANT_ID
     # - AZURE_CLIENT_SECRET
 
-    config = SkillConfig.from_env()
+    # NEW PYDANTIC WAY (recommended): Automatically loads from .env
+    config = SkillConfig()
+
+    # OLD WAY (still works for backwards compatibility):
+    # config = SkillConfig.from_env()
 
     # Create email client
     client = EmailClient(config)
 
     print("✓ Email client initialized successfully")
     return client
+
+
+def example_pydantic_configuration():
+    """Example: Leveraging Pydantic Settings features."""
+    # Method 1: Automatic .env loading (simplest)
+    config = SkillConfig()
+
+    # Method 2: Override specific values programmatically
+    config = SkillConfig(
+        azure_client_id="custom-client-id",
+        azure_tenant_id="custom-tenant-id",
+        azure_client_secret="custom-secret",
+    )
+
+    # Method 3: Use nested configuration with double underscore
+    config = SkillConfig(
+        api__timeout=60,  # Override API timeout
+        api__max_retries=5,  # Override max retries
+        cache__enabled=True,  # Enable cache
+    )
+
+    # Method 4: Load from different .env file
+    config = SkillConfig(_env_file='.env.production')
+
+    # Access configuration (Pydantic provides full type safety)
+    print(f"Client ID: {config.azure_client_id}")
+    print(f"API Endpoint: {config.api.endpoint}")
+    print(f"Cache Path: {config.cache.cache_path}")
+
+    # Export to dictionary (secrets redacted by default)
+    config_dict = config.to_dict()
+    print(f"Configuration: {config_dict}")
+
+    print("✓ Pydantic configuration examples completed")
 
 
 def example_send_simple_email(client: EmailClient):

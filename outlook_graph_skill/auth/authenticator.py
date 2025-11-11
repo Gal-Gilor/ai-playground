@@ -60,8 +60,8 @@ class GraphAuthenticator:
         try:
             self._app = ConfidentialClientApplication(
                 client_id=config.auth.client_id,
-                client_credential=config.auth.client_secret,
-                authority=config.auth.authority,
+                client_credential=config.auth.get_client_secret_value(),
+                authority=config.auth.authority_url,
                 token_cache=self._token_cache.get_cache(),
             )
             logger.info("Graph authenticator initialized successfully")

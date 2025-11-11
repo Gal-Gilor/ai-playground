@@ -26,6 +26,11 @@ cd outlook_graph_skill
 pip install -r requirements.txt
 ```
 
+Dependencies include:
+- `msal` - Microsoft Authentication
+- `requests` - HTTP client
+- `pydantic` & `pydantic-settings` - Configuration management
+
 ## Step 3: Configure (1 minute)
 
 Create a `.env` file:
@@ -43,8 +48,8 @@ Create `test.py`:
 ```python
 from outlook_graph_skill import SkillConfig, EmailClient
 
-# Load configuration
-config = SkillConfig.from_env()
+# Load configuration (automatically loads from .env)
+config = SkillConfig()
 
 # Create client
 client = EmailClient(config)
@@ -65,11 +70,18 @@ python test.py
 
 ## That's it!
 
-You're ready to use the skill. Check out these resources:
+You're ready to use the skill. The configuration now uses **Pydantic Settings** for:
+- ✅ Automatic .env file loading
+- ✅ Type validation
+- ✅ Clear error messages
+- ✅ IDE autocomplete support
+
+Check out these resources:
 
 - [Full Documentation](README.md)
 - [Setup Guide](SETUP_GUIDE.md)
 - [Usage Examples](examples/usage_examples.py)
+- [Pydantic Migration Guide](PYDANTIC_MIGRATION.md)
 
 ## Common Use Cases
 

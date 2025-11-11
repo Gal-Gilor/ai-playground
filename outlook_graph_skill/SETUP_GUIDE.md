@@ -111,11 +111,16 @@ Install required packages:
 pip install -r requirements.txt
 ```
 
+This installs:
+- `msal` - Microsoft Authentication Library
+- `requests` - HTTP client
+- `pydantic` & `pydantic-settings` - Configuration with validation and auto .env loading
+
 ### Step 2: Create Configuration
 
-Choose one of these configuration methods:
+The skill uses **Pydantic Settings** for automatic .env file loading and validation.
 
-#### Method A: Environment Variables (Recommended)
+#### Method A: .env File (Recommended)
 
 1. Copy the example environment file:
 
@@ -132,12 +137,16 @@ AZURE_CLIENT_SECRET=abC1d~EfG2hI3jK4lM5nO6pQ7rS8tU9vW0xY1zA
 GRAPH_API_SCOPES=https://graph.microsoft.com/.default
 ```
 
-3. Load environment variables (if using python-dotenv):
+3. Use in your code (automatic loading via Pydantic Settings):
 
 ```python
-from dotenv import load_dotenv
-load_dotenv()
+from outlook_graph_skill import SkillConfig
+
+# Automatically loads from .env - no extra steps needed!
+config = SkillConfig()
 ```
+
+**Note:** The `.env` file is automatically detected and loaded by Pydantic Settings. No need for `python-dotenv` or manual loading!
 
 #### Method B: JSON Configuration
 
@@ -166,8 +175,8 @@ Create a test script `test_setup.py`:
 ```python
 from outlook_graph_skill import SkillConfig, EmailClient
 
-# Test configuration loading
-config = SkillConfig.from_env()  # or SkillConfig.from_json("config/config.json")
+# Test configuration loading (automatically loads from .env)
+config = SkillConfig()
 
 # Test authentication
 client = EmailClient(config)
@@ -176,9 +185,13 @@ client = EmailClient(config)
 try:
     client.authenticator.validate_token()
     print("✅ Setup successful! Authentication working.")
+    print(f"   Client ID: {config.azure_client_id}")
+    print(f"   API Endpoint: {config.api.endpoint}")
 except Exception as e:
     print(f"❌ Setup failed: {e}")
 ```
+
+**Note:** If you get validation errors, Pydantic will provide clear messages about what's missing or invalid.
 
 Run the test:
 

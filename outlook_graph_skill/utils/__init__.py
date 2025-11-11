@@ -11,6 +11,11 @@ from outlook_graph_skill.utils.exceptions import (
     TokenException,
     ValidationException,
 )
+from outlook_graph_skill.utils.pydantic_helpers import (
+    format_validation_errors,
+    get_validation_error_summary,
+    handle_pydantic_validation_error,
+)
 from outlook_graph_skill.utils.validators import (
     ContentValidator,
     EmailValidator,
@@ -34,4 +39,7 @@ __all__ = [
     "ContentValidator",
     "SearchValidator",
     "PaginationValidator",
+    "handle_pydantic_validation_error",
+    "format_validation_errors",
+    "get_validation_error_summary",
 ]
