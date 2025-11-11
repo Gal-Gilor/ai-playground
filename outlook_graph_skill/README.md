@@ -16,12 +16,12 @@ Enterprise-grade Python skill for interacting with Microsoft Outlook through the
 
 ## Prerequisites
 
-### 1. Azure AD App Registration
+### 1. Microsoft Entra ID App Registration
 
-You need to register an application in Azure Active Directory:
+You need to register an application in Microsoft Entra ID (formerly Azure AD):
 
 1. Go to [Azure Portal](https://portal.azure.com)
-2. Navigate to **Azure Active Directory** > **App registrations**
+2. Navigate to **Microsoft Entra ID** > **App registrations**
 3. Click **New registration**
 4. Provide a name (e.g., "Outlook Graph Skill")
 5. Select **Accounts in this organizational directory only**
@@ -51,8 +51,8 @@ After registration, configure permissions:
 ### 4. Note Your IDs
 
 From the **Overview** page, copy:
-- **Application (client) ID**
-- **Directory (tenant) ID**
+- **Application (client) ID** - Your Entra ID application identifier
+- **Directory (tenant) ID** - Your Entra ID tenant identifier
 
 ## Installation
 

@@ -24,8 +24,8 @@ class AuthConfig(BaseModel):
     """Authentication configuration settings.
 
     Attributes:
-        client_id: Azure AD application (client) ID.
-        tenant_id: Azure AD tenant (directory) ID.
+        client_id: Microsoft Entra ID application (client) ID.
+        tenant_id: Microsoft Entra ID tenant (directory) ID.
         client_secret: Application client secret (sensitive).
         authority: Authentication authority URL (computed if not provided).
         scopes: List of Microsoft Graph API scopes.
@@ -34,12 +34,12 @@ class AuthConfig(BaseModel):
     client_id: str = Field(
         ...,
         min_length=1,
-        description="Azure AD application (client) ID",
+        description="Microsoft Entra ID application (client) ID",
     )
     tenant_id: str = Field(
         ...,
         min_length=1,
-        description="Azure AD tenant (directory) ID",
+        description="Microsoft Entra ID tenant (directory) ID",
     )
     client_secret: SecretStr = Field(
         ...,
@@ -202,8 +202,8 @@ class SkillConfig(BaseSettings):
     It automatically loads from .env files and provides robust validation.
 
     Environment Variables:
-        AZURE_CLIENT_ID: Azure AD application ID
-        AZURE_TENANT_ID: Azure AD tenant ID
+        AZURE_CLIENT_ID: Microsoft Entra ID application ID
+        AZURE_TENANT_ID: Microsoft Entra ID tenant ID
         AZURE_CLIENT_SECRET: Application client secret
         AZURE_AUTHORITY: Optional authentication authority URL
         GRAPH_API_SCOPES: Comma-separated list of scopes
@@ -234,11 +234,11 @@ class SkillConfig(BaseSettings):
     # Authentication settings
     azure_client_id: str = Field(
         ...,
-        description="Azure AD application (client) ID",
+        description="Microsoft Entra ID application (client) ID",
     )
     azure_tenant_id: str = Field(
         ...,
-        description="Azure AD tenant (directory) ID",
+        description="Microsoft Entra ID tenant (directory) ID",
     )
     azure_client_secret: SecretStr = Field(
         ...,

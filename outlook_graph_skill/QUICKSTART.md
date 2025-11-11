@@ -5,12 +5,12 @@ Get started with the Outlook Graph API Skill in 5 minutes!
 ## Prerequisites
 
 - Python 3.8 or higher
-- Azure AD account with admin access
+- Microsoft Entra ID account with admin access
 - 10 minutes for Azure setup
 
-## Step 1: Azure AD Setup (5 minutes)
+## Step 1: Microsoft Entra ID Setup (5 minutes)
 
-1. Go to [Azure Portal](https://portal.azure.com) → **Azure Active Directory** → **App registrations**
+1. Go to [Azure Portal](https://portal.azure.com) → **Microsoft Entra ID** → **App registrations**
 2. Click **New registration**
 3. Name it "Outlook Graph Skill" → Register
 4. Copy **Application (client) ID** and **Directory (tenant) ID**

@@ -4,18 +4,18 @@ This guide will walk you through the complete setup process for the Outlook Grap
 
 ## Table of Contents
 
-1. [Azure AD Configuration](#azure-ad-configuration)
+1. [Microsoft Entra ID Configuration](#microsoft-entra-id-configuration)
 2. [Local Setup](#local-setup)
 3. [Configuration](#configuration)
 4. [Testing](#testing)
 5. [Troubleshooting](#troubleshooting)
 
-## Azure AD Configuration
+## Microsoft Entra ID Configuration
 
 ### Step 1: Register an Application
 
 1. Navigate to [Azure Portal](https://portal.azure.com)
-2. Go to **Azure Active Directory**
+2. Go to **Microsoft Entra ID** (formerly Azure Active Directory)
 3. Select **App registrations** from the left menu
 4. Click **+ New registration**
 
@@ -30,8 +30,8 @@ This guide will walk you through the complete setup process for the Outlook Grap
 
 After registration, you'll see the app overview page. Copy these values:
 
-- **Application (client) ID**: e.g., `12345678-1234-1234-1234-123456789012`
-- **Directory (tenant) ID**: e.g., `87654321-4321-4321-4321-210987654321`
+- **Application (client) ID**: e.g., `12345678-1234-1234-1234-123456789012` (Your Entra ID application identifier)
+- **Directory (tenant) ID**: e.g., `87654321-4321-4321-4321-210987654321` (Your Entra ID tenant identifier)
 
 **Save these values** - you'll need them for configuration.
 
@@ -338,7 +338,7 @@ If you encounter issues:
 1. Check this troubleshooting guide
 2. Review error messages carefully
 3. Check Microsoft Graph API documentation
-4. Verify Azure AD configuration
+4. Verify Microsoft Entra ID configuration
 5. Test with [Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer)
 
 ## Resources
