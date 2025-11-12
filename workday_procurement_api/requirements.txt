@@ -1,0 +1,26 @@
+# Core dependencies
+fastapi>=0.109.0  # Modern web framework for building APIs
+uvicorn[standard]>=0.27.0  # ASGI server for FastAPI
+pydantic>=2.6.0  # Data validation using Python type annotations
+pydantic-settings>=2.1.0  # Settings management using pydantic
+
+# SOAP client
+zeep>=4.2.1  # Modern SOAP client for Python
+lxml>=5.1.0  # XML processing library
+
+# HTTP client
+httpx>=0.26.0  # Async HTTP client
+
+# Environment management
+python-dotenv>=1.0.0  # Load environment variables from .env file
+
+# Security
+cryptography>=42.0.0  # For certificate-based authentication
+
+# Development dependencies
+pytest>=8.0.0  # Testing framework
+pytest-asyncio>=0.23.0  # Async test support
+pytest-cov>=4.1.0  # Code coverage
+black>=24.1.0  # Code formatting
+flake8>=7.0.0  # Linting
+mypy>=1.8.0  # Type checking
