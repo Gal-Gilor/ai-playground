@@ -1,9 +1,9 @@
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-# AI Playground
+# AI/ML Playground
 
-A personal repository for AI/ML experiments. Projects are self-contained, each with its own dependencies and configuration.
+A repository for personal AI and Machine Learning projects. Each project is self-contained and at a different stage of development, covering disciplines like Computer Vision, Natural Language Processing, AI Engineering, etc.
 
 ## Projects
 
@@ -15,7 +15,7 @@ A personal repository for AI/ML experiments. Projects are self-contained, each w
 
 Other repositories:
 
-- [gemini-scribe](https://github.com/Gal-Gilor/gemini-scribe): FastAPI service that converts PDF documents to Markdown using Google Gemini AI. Deployed to Cloud Run with async processing and Google Cloud Storage integration.
+- [gemini-scribe](https://github.com/Gal-Gilor/gemini-scribe): FastAPI application that converts PDF documents to Markdown using Gemini. Deployed to Cloud Run with async processing and Google Cloud Storage integration.
 
 - [markdown-mcp](https://github.com/Gal-Gilor/markdown-mcp): MCP server built with FastMCP and FastAPI that splits Markdown documents into hierarchical sections, preserving parent-child and sibling relationships.
 
