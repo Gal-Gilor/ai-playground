@@ -1,0 +1,13 @@
+path-to-detection-model: "models/yolo26n.pt"
+path-to-images: "data/images"
+path-to-labels: "data/labels.csv"
+class-detection-ids:
+  - {name: person, id: 0}
+  - {name: dog, id: 16}
+upload-destination-prefix: "data/raw"
+upload-max-concurrent: 40
+upload-file-suffix: ""
+download-source-prefix: "data/images"
+download-output-dir: "data/images"
+download-max-concurrent: 40
+download-file-suffix: ""
