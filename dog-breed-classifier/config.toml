@@ -1,0 +1,22 @@
+[training]
+exploded_labels_csv = "training/data/exploded_labels.csv" 
+
+[training.unpack_bounding_boxes]
+source_labels_csv = "training/data/labels.csv"     
+bounding_boxes_column = "dog_bounding_boxes"               
+
+[training.crop_images]
+raw_images_directory = "training/data/images"         
+cropped_images_directory = "training/data/cropped_images"
+cropped_image_labels_csv = "training/data/cropped_image_labels.csv"  
+resize = [224, 224]
+source_id_column = "id"
+breed_column = "breed"
+bounding_boxes_column = "dog_bounding_boxes"
+crop_id_column = "crop_id"
+output_id_column = "id"
+
+[training.organize_dataset]
+cropped_image_labels_csv = "training/data/cropped_image_labels.csv"
+cropped_images_directory = "training/data/cropped_images"
+train_directory          = "training/data/train"
