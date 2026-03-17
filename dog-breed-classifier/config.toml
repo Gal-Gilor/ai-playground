@@ -1,3 +1,8 @@
+[app]
+# Path to the .pth checkpoint loaded by the FastAPI service for inference.
+# Update this after training to point to the desired checkpoint.
+model_weights = "training/data/models/efficientnet_b0_latest.pth"
+
 [training]
 exploded_labels_csv = "training/data/exploded_labels.csv" 
 
@@ -9,14 +14,44 @@ bounding_boxes_column = "dog_bounding_boxes"
 raw_images_directory = "training/data/images"         
 cropped_images_directory = "training/data/cropped_images"
 cropped_image_labels_csv = "training/data/cropped_image_labels.csv"  
-resize = [224, 224]
+resize = [320, 320]
 source_id_column = "id"
 breed_column = "breed"
 bounding_boxes_column = "dog_bounding_boxes"
 crop_id_column = "crop_id"
 output_id_column = "id"
 
-[training.organize_dataset]
-cropped_image_labels_csv = "training/data/cropped_image_labels.csv"
-cropped_images_directory = "training/data/cropped_images"
-train_directory          = "training/data/train"
+[training.create_train_split]
+train_directory = "training/data/train"
+
+[training.create_test_split]
+test_size = 0.2
+
+[training.train_classifier]
+train_directory = "training/data/train"
+output_directory = "training/data/models"
+
+# Training hyperparameters
+epochs = 40
+batch_size = 32
+learning_rate = 1e-3
+weight_decay = 1e-4
+
+# ImageNet normalization — Recommended for pretrained EfficientNet-B0
+normalize_mean = [0.485, 0.456, 0.406]
+normalize_std = [0.229, 0.224, 0.225]
+
+# Train-time augmentation (images are 320×320 crops; center_crop_size trims to 300×300)
+random_horizontal_flip_prob = 0.5
+random_rotation_degrees = 15
+color_jitter_brightness = 0.2
+color_jitter_contrast = 0.2
+color_jitter_saturation = 0.2
+color_jitter_hue = 0.1
+center_crop_size = 300
+early_stopping_patience = 7
+val_split = 0.1
+lr_patience = 2
+lr_factor = 0.5
+lr_min_lr = 1e-7
+label_smoothing = 0.1

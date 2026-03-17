@@ -133,7 +133,7 @@ def process_row(
 
             crop = crop_image(image, bounding_box)
             if resize:
-                crop = crop.resize(resize, Image.LANCZOS)
+                crop = crop.resize(resize, Image.BICUBIC)
             crop_id = row[crop_id_column]
             crop.save(output_directory / f"{crop_id}.jpg", format="JPEG")
 

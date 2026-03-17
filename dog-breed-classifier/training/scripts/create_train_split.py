@@ -1,8 +1,8 @@
-"""Organize cropped images into per-breed subdirectories for PyTorch ImageFolder.
+"""Copy cropped images into per-breed subdirectories for PyTorch ImageFolder.
 
 Usage (from project root):
-    python -m training.scripts.organize_dataset
-    python -m training.scripts.organize_dataset --help
+    python -m training.scripts.create_train_split
+    python -m training.scripts.create_train_split --help
 """
 
 import argparse
@@ -15,12 +15,20 @@ import pandas as pd
 from tqdm import tqdm
 
 from app.settings import config
+from training.utils import create_breed_directories
 
 logger = logging.getLogger(__name__)
 
 
 def _copy_file(src_dst: tuple[str, str]) -> str | None:
-    """Copy src to dst. Returns src path string if source is missing, else None."""
+    """Copy src to dst.
+
+    Args:
+        src_dst: A ``(src, dst)`` pair of path strings.
+
+    Returns:
+        The source path string if the source file is missing, otherwise ``None``.
+    """
     src, dst = src_dst
     if not Path(src).exists():
         return src
@@ -28,12 +36,7 @@ def _copy_file(src_dst: tuple[str, str]) -> str | None:
     return None
 
 
-def _create_breed_directories(train_directory: Path, breeds: pd.Series) -> None:
-    for breed in breeds.unique():
-        (train_directory / breed).mkdir(exist_ok=True)
-
-
-def organize_dataset(
+def create_train_split(
     labels_csv: Path,
     cropped_images_directory: Path,
     train_directory: Path,
@@ -42,18 +45,26 @@ def organize_dataset(
 ) -> tuple[int, int]:
     """Copy cropped images into {train_directory}/{breed}/{id}.jpg.
 
+    Args:
+        labels_csv: Path to the CSV containing image IDs and breed labels.
+        cropped_images_directory: Directory containing the cropped source images.
+        train_directory: Destination root; images land at {train_directory}/{breed}/{id}.jpg.
+        id_column: Column name for the image ID.
+        breed_column: Column name for the breed label.
+
     Returns:
-        (copied, skipped) counts.
+        A ``(copied, skipped)`` tuple where ``skipped`` is the count of missing source images.
     """
     df = pd.read_csv(labels_csv)
     train_directory.mkdir(parents=True, exist_ok=True)
-    _create_breed_directories(train_directory, df[breed_column])
+    create_breed_directories(train_directory, df[breed_column].unique())
 
-    # Vectorized path construction — no DataFrame iteration
+    # Vectorized path construction
     src_paths = str(cropped_images_directory) + "/" + df[id_column].astype(str) + ".jpg"
     dst_paths = (
-        str(train_directory) + "/" + df[breed_column].astype(str)
-        + "/" + df[id_column].astype(str) + ".jpg"
+        str(train_directory)
+        + "/"
+        + df[breed_column].astype(str).str.cat(df[id_column].astype(str) + ".jpg", sep="/")
     )
     pairs = list(zip(src_paths, dst_paths))
 
@@ -73,19 +84,21 @@ def organize_dataset(
 
 
 def parse_args() -> argparse.Namespace:
-    cfg = config.training.organize_dataset
+    """Parse command-line arguments, defaulting to values from config."""
+    cfg = config.training.create_train_split
+    cfg_crop = config.training.crop_images
     parser = argparse.ArgumentParser(
-        description="Organize cropped images into per-breed subdirectories."
+        description="Copy cropped images into per-breed subdirectories."
     )
     parser.add_argument(
         "--labels-csv",
         type=Path,
-        default=Path(cfg.cropped_image_labels_csv),
+        default=Path(cfg_crop.cropped_image_labels_csv),
     )
     parser.add_argument(
         "--cropped-images-directory",
         type=Path,
-        default=Path(cfg.cropped_images_directory),
+        default=Path(cfg_crop.cropped_images_directory),
     )
     parser.add_argument(
         "--train-directory",
@@ -101,13 +114,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Entry point: parse arguments and run the train split."""
     args = parse_args()
     logging.basicConfig(
         level=args.log_level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
     cfg_crop = config.training.crop_images
-    organize_dataset(
+    create_train_split(
         args.labels_csv,
         args.cropped_images_directory,
         args.train_directory,
