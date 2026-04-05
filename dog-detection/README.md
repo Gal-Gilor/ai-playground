@@ -46,7 +46,7 @@ uv sync
 `config.yaml` controls all runtime paths and detection settings:
 
 ```yaml
-path-to-detection-model: "models/yolo26n.pt"
+path-to-detection-model: "yolo26l.pt"
 path-to-images: "data/images"
 path-to-labels: "data/labels.csv"
 class-detection-ids:
@@ -63,9 +63,23 @@ Class IDs are from the COCO dataset (person=0, dog=16). Set the `PATH_TO_CONFIG`
 | Command | Description |
 |---|---|
 | `make update-labels` | Run YOLO inference and update `data/labels.csv` |
-| `make upload` | Upload `data/images/` to GCS |
-| `make download` | Download images from GCS to `data/images/` |
+| `make upload` | Upload `data/images/` to GCS (requires credentials) |
+| `make download` | Download images from GCS to `data/images/` (requires credentials) |
 | `make clean-cache` | Remove `__pycache__`, `.pyc`, `.pytest_cache`, `.ruff_cache` |
+
+### Downloading from a public bucket
+
+`make download` uses GCP Application Default Credentials. To download from a publicly accessible bucket without credentials, call the script directly with `--public`:
+
+```bash
+uv run python scripts/download_folder.py \
+  --public \
+  --bucket pooch-perfect-public \
+  --source-prefix data/raw \
+  --file-type-suffix .jpg
+```
+
+`--bucket` overrides the `GOOGLE_CLOUD_BUCKET` env var. `--source-prefix` overrides `download-source-prefix` from `config.yaml`.
 
 ## Development
 

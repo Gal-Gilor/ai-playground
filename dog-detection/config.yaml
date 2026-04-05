@@ -1,4 +1,4 @@
-path-to-detection-model: "models/yolo26n.pt"
+path-to-detection-model: "yolo26l.pt"
 path-to-images: "data/images"
 path-to-labels: "data/labels.csv"
 class-detection-ids:

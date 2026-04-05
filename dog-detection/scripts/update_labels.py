@@ -149,7 +149,10 @@ def update_labels(
         labels_path (Path): Path to write the updated CSV.
     """
     detections_df = pd.DataFrame(detections).set_index("id")
-    updated_df = df.join(detections_df, on="id")
+    detection_cols = detections_df.columns.tolist()
+    updated_df = df.drop(columns=[c for c in detection_cols if c in df.columns]).join(
+        detections_df, on="id"
+    )
     updated_df.to_csv(labels_path, index=False)
 
 

@@ -267,6 +267,58 @@ class AsyncStorageBucket:
             raise
 
 
+async def list_public_blobs(
+    session: aiohttp.ClientSession,
+    bucket_name: str,
+    prefix: Optional[str] = None,
+) -> list:
+    """List blobs in a public GCS bucket without credentials.
+
+    Args:
+        session: aiohttp session to use for the request.
+        bucket_name: Name of the public GCS bucket.
+        prefix: Optional prefix to filter blobs.
+
+    Returns:
+        list: List of blob items (dicts with at least a "name" key).
+
+    Raises:
+        aiohttp.ClientResponseError: If the request fails (e.g. bucket not public).
+    """
+    url = f"https://storage.googleapis.com/storage/v1/b/{bucket_name}/o"
+    params = {"prefix": prefix} if prefix else {}
+    async with session.get(url, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+    return data.get("items", [])
+
+
+async def download_public_blob(
+    session: aiohttp.ClientSession,
+    bucket_name: str,
+    blob_name: str,
+    destination_file_path: str,
+) -> None:
+    """Download a single blob from a public GCS bucket without credentials.
+
+    Args:
+        session: aiohttp session to use for the request.
+        bucket_name: Name of the public GCS bucket.
+        blob_name: Blob name (path inside the bucket) to download.
+        destination_file_path: Local path where the file will be written.
+
+    Raises:
+        aiohttp.ClientResponseError: If the download request fails.
+    """
+    url = f"https://storage.googleapis.com/{bucket_name}/{blob_name}"
+    async with session.get(url) as resp:
+        resp.raise_for_status()
+        data = await resp.read()
+    dest = Path(destination_file_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+
+
 async def get_storage_bucket(
     bucket_name: str,
     session: Optional[aiohttp.ClientSession] = None,
