@@ -5,8 +5,8 @@ annotated bounding boxes. Each crop is saved as a new JPEG with a UUID4 filename
 A new labels CSV is written mapping each crop ID back to its breed.
 
 Usage (from project root):
-    python -m training.scripts.crop_images
-    python -m training.scripts.crop_images --help
+    python -m scripts.crop_images
+    python -m scripts.crop_images --help
 """
 
 import argparse
@@ -19,9 +19,9 @@ from PIL import Image
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from app.settings import config
-from training.utils import get_image_path
-from training.utils import load_labels
+from data_utils import get_image_path
+from data_utils import load_labels
+from settings import config
 
 logger = logging.getLogger(__name__)
 

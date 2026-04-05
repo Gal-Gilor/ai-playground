@@ -1,13 +1,5 @@
-"""Fine-tune EfficientNet-B3 on the dog breed dataset via transfer learning.
+"""Shared training utilities used by train_classification_head and finetune_backbone."""
 
-Usage (from project root):
-    python -m training.scripts.train_classifier
-    python -m training.scripts.train_classifier --epochs 1 --batch-size 16
-    python -m training.scripts.train_classifier --help
-"""
-
-import argparse
-import datetime
 import logging
 from pathlib import Path
 
@@ -15,26 +7,48 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-import yaml
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.models import EfficientNet_B3_Weights
-from torchvision.models import efficientnet_b3
 from tqdm import tqdm
 
-from app.models.config import TrainClassifierConfig
-from app.settings import config
-from training.utils import get_device
+from config import BaseTrainingConfig
 
 logger = logging.getLogger(__name__)
 
 
+def get_device() -> torch.device:
+    """Return the best available device, preferring CUDA over CPU.
+
+    Returns:
+        torch.device: ``cuda:0`` if a CUDA-capable GPU is available, otherwise ``cpu``.
+    """
+    if torch.cuda.is_available():
+        device_name = torch.cuda.get_device_name(0)
+        logger.info(f"CUDA confirmed: {device_name}")
+        return torch.device("cuda:0")
+    logger.info("No CUDA GPU found — using CPU")
+    return torch.device("cpu")
+
+
+def set_bn_eval(model: nn.Module) -> None:
+    """Set all BatchNorm layers to eval mode to preserve ImageNet statistics.
+
+    Call this after ``model.train()`` at the start of every training epoch.
+
+    Args:
+        model: The model whose BatchNorm layers should be frozen.
+    """
+    for module in model.modules():
+        if isinstance(module, (nn.BatchNorm2d, nn.BatchNorm1d)):
+            module.eval()
+
+
 def get_dataloaders(
-    cfg: TrainClassifierConfig,
+    cfg: BaseTrainingConfig,
 ) -> tuple[DataLoader, DataLoader, list[str], torch.Tensor]:
     """Build train and validation DataLoaders from a stratified split of the train directory.
 
@@ -42,7 +56,7 @@ def get_dataloaders(
     Class weights are computed from training indices only to avoid leakage.
 
     Args:
-        cfg: TrainClassifierConfig with directory paths and transform parameters.
+        cfg: Config with directory paths and transform parameters.
 
     Returns:
         A ``(train_loader, val_loader, classes, class_weights)`` tuple.
@@ -107,27 +121,6 @@ def get_dataloaders(
     return train_loader, val_loader, train_full.classes, class_weights
 
 
-def build_model(num_classes: int) -> nn.Module:
-    """Load pretrained EfficientNet-B0 and replace the classifier head.
-
-    The convolutional backbone (model.features) is frozen; the classifier head is trained.
-
-    Args:
-        num_classes: Number of output classes.
-
-    Returns:
-        The modified model.
-    """
-    model = efficientnet_b3(weights=EfficientNet_B3_Weights.DEFAULT)
-    for param in model.features.parameters():
-        param.requires_grad = False
-    in_features = model.classifier[1].in_features
-    model.classifier[1] = nn.Linear(in_features, num_classes)
-    logger.info(f"Built EfficientNet-B3 head: {in_features} → {num_classes} classes")
-
-    return model
-
-
 def save_curves(history: dict[str, list[float]], run_dir: Path) -> None:
     """Save train/val loss and accuracy curves as curves.jpg in run_dir.
 
@@ -160,16 +153,20 @@ def train(
     model: nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    cfg: TrainClassifierConfig,
+    cfg: BaseTrainingConfig,
     device: torch.device,
     run_dir: Path,
     class_weights: torch.Tensor,
     classes: list[str],
-) -> None:
+    optimizer: torch.optim.Optimizer,
+    *,
+    freeze_bn: bool = False,
+    checkpoint_metadata: dict | None = None,
+) -> dict[str, float | int]:
     """Train the model, saving checkpoints and curves into run_dir.
 
-    Saves ``best.pth`` whenever validation accuracy improves and ``latest.pth``
-    after every epoch. Stops early if validation accuracy has not improved for
+    Saves ``best.pth`` whenever validation loss improves and ``latest.pth``
+    after every epoch. Stops early if validation loss has not improved for
     ``cfg.early_stopping_patience`` consecutive epochs.
 
     Args:
@@ -181,13 +178,15 @@ def train(
         run_dir: Directory for this run's artifacts (must already exist).
         class_weights: Per-class loss weights to handle class imbalance.
         classes: Ordered list of class names, used to label checkpoints.
+        optimizer: Optimizer to use for training.
+        freeze_bn: If True, keep BatchNorm layers in eval mode during training
+            to preserve ImageNet statistics (used during backbone fine-tuning).
+
+    Returns:
+        Dict with best-epoch metrics: best_epoch, best_train_loss, best_train_acc,
+        best_val_loss, best_val_acc.
     """
     model.to(device)
-    optimizer = torch.optim.Adam(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=cfg.learning_rate,
-        weight_decay=cfg.weight_decay,
-    )
     criterion = nn.CrossEntropyLoss(
         weight=class_weights.to(device), label_smoothing=cfg.label_smoothing
     )
@@ -200,6 +199,10 @@ def train(
     )
 
     best_val_loss = float("inf")
+    best_epoch = 0
+    best_train_loss = float("inf")
+    best_train_acc = 0.0
+    best_val_acc = 0.0
     patience_counter = 0
     best_path = run_dir / "best.pth"
     latest_path = run_dir / "latest.pth"
@@ -213,6 +216,8 @@ def train(
     for epoch in range(1, cfg.epochs + 1):
         # --- train ---
         model.train()
+        if freeze_bn:
+            set_bn_eval(model)
         train_loss = 0.0
         train_correct = 0
         train_total = 0
@@ -267,11 +272,16 @@ def train(
             "epoch": epoch,
             "val_loss": avg_val_loss,
             "val_acc": val_acc,
+            **(checkpoint_metadata or {}),
         }
         torch.save(checkpoint, latest_path)
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
+            best_epoch = epoch
+            best_train_loss = avg_train_loss
+            best_train_acc = train_acc
+            best_val_acc = val_acc
             patience_counter = 0
             torch.save(checkpoint, best_path)
             logger.info(f"New best val_loss={best_val_loss:.4f} — saved best checkpoint")
@@ -287,122 +297,10 @@ def train(
         logger.info(f"lr={current_lr:.2e}")
 
     save_curves(history, run_dir)
-
-
-def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments, defaulting to values from config."""
-    cfg = config.training.train_classifier
-    parser = argparse.ArgumentParser(
-        description="Fine-tune EfficientNet-B0 on the dog breed dataset."
-    )
-    parser.add_argument("--train-directory", type=str, default=cfg.train_directory)
-    parser.add_argument("--output-directory", type=str, default=cfg.output_directory)
-    parser.add_argument("--epochs", type=int, default=cfg.epochs)
-    parser.add_argument("--batch-size", type=int, default=cfg.batch_size)
-    parser.add_argument("--learning-rate", type=float, default=cfg.learning_rate)
-    parser.add_argument("--weight-decay", type=float, default=cfg.weight_decay)
-    parser.add_argument("--val-split", type=float, default=cfg.val_split)
-    parser.add_argument(
-        "--normalize-mean",
-        type=float,
-        nargs=3,
-        default=cfg.normalize_mean,
-        metavar=("R", "G", "B"),
-    )
-    parser.add_argument(
-        "--normalize-std",
-        type=float,
-        nargs=3,
-        default=cfg.normalize_std,
-        metavar=("R", "G", "B"),
-    )
-    parser.add_argument(
-        "--random-horizontal-flip-prob", type=float, default=cfg.random_horizontal_flip_prob
-    )
-    parser.add_argument(
-        "--random-rotation-degrees", type=int, default=cfg.random_rotation_degrees
-    )
-    parser.add_argument(
-        "--color-jitter-brightness", type=float, default=cfg.color_jitter_brightness
-    )
-    parser.add_argument(
-        "--color-jitter-contrast", type=float, default=cfg.color_jitter_contrast
-    )
-    parser.add_argument(
-        "--color-jitter-saturation", type=float, default=cfg.color_jitter_saturation
-    )
-    parser.add_argument("--color-jitter-hue", type=float, default=cfg.color_jitter_hue)
-    parser.add_argument("--center-crop-size", type=int, default=cfg.center_crop_size)
-    parser.add_argument(
-        "--early-stopping-patience", type=int, default=cfg.early_stopping_patience
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default=None,
-        help="Device to use for training (default: cuda if available, else cpu)",
-    )
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-    )
-    return parser.parse_args()
-
-
-def main() -> None:
-    """Entry point: parse arguments and run training."""
-    args = parse_args()
-    logging.basicConfig(
-        level=args.log_level,
-        format="%(asctime)s  %(levelname)-8s  %(message)s",
-        datefmt="%H:%M:%S",
-    )
-
-    cfg = TrainClassifierConfig(
-        train_directory=args.train_directory,
-        output_directory=args.output_directory,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
-        val_split=args.val_split,
-        normalize_mean=args.normalize_mean,
-        normalize_std=args.normalize_std,
-        random_horizontal_flip_prob=args.random_horizontal_flip_prob,
-        random_rotation_degrees=args.random_rotation_degrees,
-        color_jitter_brightness=args.color_jitter_brightness,
-        color_jitter_contrast=args.color_jitter_contrast,
-        color_jitter_saturation=args.color_jitter_saturation,
-        color_jitter_hue=args.color_jitter_hue,
-        center_crop_size=args.center_crop_size,
-        early_stopping_patience=args.early_stopping_patience,
-    )
-
-    run_dir = Path(cfg.output_directory) / datetime.datetime.now().strftime(
-        "run_%Y%m%d_%H%M%S"
-    )
-    run_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Run directory: {run_dir}")
-
-    params = {
-        "epochs": cfg.epochs,
-        "batch_size": cfg.batch_size,
-        "learning_rate": cfg.learning_rate,
-        "weight_decay": cfg.weight_decay,
-        "val_split": cfg.val_split,
-        "early_stopping_patience": cfg.early_stopping_patience,
+    return {
+        "best_epoch": best_epoch,
+        "best_train_loss": round(best_train_loss, 4),
+        "best_train_acc": round(best_train_acc, 2),
+        "best_val_loss": round(best_val_loss, 4),
+        "best_val_acc": round(best_val_acc, 2),
     }
-    with open(run_dir / "params.yaml", "w") as f:
-        yaml.safe_dump(params, f, sort_keys=False)
-
-    device = torch.device(args.device) if args.device else get_device()
-    logger.info(f"Using device: {device}")
-
-    train_loader, val_loader, classes, class_weights = get_dataloaders(cfg)
-    model = build_model(num_classes=len(classes))
-    train(model, train_loader, val_loader, cfg, device, run_dir, class_weights, classes)
-
-
-if __name__ == "__main__":
-    main()

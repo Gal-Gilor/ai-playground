@@ -1,22 +1,28 @@
-.PHONY: unpack crop train-split test-split train pipeline reset
+.PHONY: unpack crop filter train-split test-split train finetune pipeline reset
 
 unpack:
-	uv run python -m training.scripts.unpack_bounding_boxes
+	uv run python -m scripts.unpack_bounding_boxes
 
 crop:
-	uv run python -m training.scripts.crop_images
+	uv run python -m scripts.crop_images
+
+filter:
+	uv run python -m scripts.filter_visible_dogs
 
 train-split:
-	uv run python -m training.scripts.create_train_split
+	uv run python -m scripts.create_train_split
 
 test-split:
-	uv run python -m training.scripts.create_test_split
+	uv run python -m scripts.create_test_split
 
 train:
-	uv run python -m training.scripts.train_classifier
+	uv run python -m scripts.train_classification_head
 
-pipeline: unpack crop train-split test-split train
+finetune:
+	uv run python -m scripts.finetune_backbone
+
+pipeline: unpack crop filter train-split test-split train
 
 reset:
-	rm -rf training/data/cropped_images/ training/data/train/ training/data/test/
-	rm -f training/data/exploded_labels.csv training/data/cropped_image_labels.csv
+	rm -rf data/cropped_images/ data/train/ data/test/
+	rm -f data/exploded_labels.csv data/cropped_image_labels.csv data/cropped_visible_labels.csv

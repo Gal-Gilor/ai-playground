@@ -1,8 +1,8 @@
 """Move a configurable fraction of training images per breed into a test split.
 
 Usage (from project root):
-    python -m training.scripts.create_test_split
-    python -m training.scripts.create_test_split --help
+    python -m scripts.create_test_split
+    python -m scripts.create_test_split --help
 """
 
 import argparse
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from app.settings import config
+from settings import config
 
 logger = logging.getLogger(__name__)
 

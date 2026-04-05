@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
-from app.models.config import Config
+from config import Config
 
 
 class Envs(BaseSettings):

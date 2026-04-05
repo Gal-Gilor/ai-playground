@@ -1,8 +1,8 @@
 """Copy cropped images into per-breed subdirectories for PyTorch ImageFolder.
 
 Usage (from project root):
-    python -m training.scripts.create_train_split
-    python -m training.scripts.create_train_split --help
+    python -m scripts.create_train_split
+    python -m scripts.create_train_split --help
 """
 
 import argparse
@@ -14,8 +14,8 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from app.settings import config
-from training.utils import create_breed_directories
+from data_utils import create_breed_directories
+from settings import config
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ def create_train_split(
     train_directory: Path,
     id_column: str = "id",
     breed_column: str = "breed",
+    visible_csv: Path | None = None,
+    visible_column: str = "is_visible",
 ) -> tuple[int, int]:
     """Copy cropped images into {train_directory}/{breed}/{id}.jpg.
 
@@ -51,11 +53,22 @@ def create_train_split(
         train_directory: Destination root; images land at {train_directory}/{breed}/{id}.jpg.
         id_column: Column name for the image ID.
         breed_column: Column name for the breed label.
+        visible_csv: Optional CSV with a visibility column (stage 4 output). None = copy all.
+        visible_column: Column name in visible_csv that holds the boolean visibility flag.
 
     Returns:
         A ``(copied, skipped)`` tuple where ``skipped`` is the count of missing source images.
     """
     df = pd.read_csv(labels_csv)
+
+    if visible_csv is not None and visible_csv.exists():
+        visible = pd.read_csv(visible_csv)
+        visible_ids = set(visible.loc[visible[visible_column], id_column])
+        before = len(df)
+        df = df[df[id_column].isin(visible_ids)]
+        logger.info("Visibility filter: %d → %d images", before, len(df))
+    elif visible_csv is not None:
+        logger.warning("Visible labels CSV not found (%s); copying all images", visible_csv)
     train_directory.mkdir(parents=True, exist_ok=True)
     create_breed_directories(train_directory, df[breed_column].unique())
 
@@ -106,6 +119,17 @@ def parse_args() -> argparse.Namespace:
         default=Path(cfg.train_directory),
     )
     parser.add_argument(
+        "--visible-csv",
+        type=Path,
+        default=Path(cfg.visible_labels_csv) if cfg.visible_labels_csv else None,
+        help="CSV with visibility column; omit to copy all images",
+    )
+    parser.add_argument(
+        "--visible-column",
+        default=cfg.visible_column,
+        help="Column name for the boolean visibility flag (default: is_visible)",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -127,6 +151,8 @@ def main() -> None:
         args.train_directory,
         id_column=cfg_crop.output_id_column,
         breed_column=cfg_crop.breed_column,
+        visible_csv=args.visible_csv,
+        visible_column=args.visible_column,
     )
 
 

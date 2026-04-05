@@ -4,23 +4,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
-import torch
 
 logger = logging.getLogger(__name__)
-
-
-def get_device() -> torch.device:
-    """Return the best available device, preferring CUDA over CPU.
-
-    Returns:
-        torch.device: ``cuda:0`` if a CUDA-capable GPU is available, otherwise ``cpu``.
-    """
-    if torch.cuda.is_available():
-        device_name = torch.cuda.get_device_name(0)
-        logger.info(f"CUDA confirmed: {device_name}")
-        return torch.device("cuda:0")
-    logger.info("No CUDA GPU found — using CPU")
-    return torch.device("cpu")
 
 
 def get_image_path(images_dir: Path, image_id: str, extension: str = ".jpg") -> Path:

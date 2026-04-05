@@ -1,8 +1,8 @@
 """Explode a labels CSV to one row per bounding box and assign each row a crop ID.
 
 Usage (from project root):
-    python -m training.scripts.unpack_bounding_boxes
-    python -m training.scripts.unpack_bounding_boxes --help
+    python -m scripts.unpack_bounding_boxes
+    python -m scripts.unpack_bounding_boxes --help
 """
 
 import argparse
@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.settings import config
-from training.utils import load_labels
+from data_utils import load_labels
+from settings import config
 
 logger = logging.getLogger(__name__)
 
