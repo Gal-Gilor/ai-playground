@@ -9,7 +9,8 @@ A repository for personal AI and Machine Learning projects. Each project is self
 
 | Project | Description | Stack |
 |---------|-------------|-------|
-| [`dog-detection/`](./dog-detection) | YOLO-based dataset preparation pipeline that filters images to keep only those containing a single dog and no people. Feeds labeled data into the [Pooch Perfect](https://github.com/Gal-Gilor/pooch-perfect) dog breed classifier. | Python, Ultralytics YOLO, Pandas, Google Cloud Storage, uv |
+| [`dog-detection/`](./dog-detection) | YOLO-based dataset preparation pipeline that filters images to keep only those containing a single dog and no people. Feeds labeled data into the [Pooch Perfect](https://github.com/Gal-Gilor/pooch-perfect) dog breed classifier. | Python, Ultralytics YOLO, Google Cloud Compute |
+| [`dog-breed-classifier/`](./dog-breed-classifier) | EfficientNet-B4 training pipeline that classifies images of dogs. Fine-tunes a pretrained backbone in two stages (head training → backbone fine-tuning), achieving ~84.7% accuracy across 120 breeds. Powers the [Pooch Perfect](https://github.com/Gal-Gilor/pooch-perfect) app. | Python, PyTorch, EfficientNet-B4, Pydantic, Gemini |
 
 ## Portfolio
 
