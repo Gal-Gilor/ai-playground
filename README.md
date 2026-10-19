@@ -20,6 +20,8 @@ The raw dataset used across both projects is publicly available on Google Cloud 
 
 Other repositories:
 
+- [markdown-chunkify](https://github.com/Gal-Gilor/markdown-chunkify) ([PyPI](https://pypi.org/project/markdown-chunkify/)): Python library that splits Markdown into hierarchical sections, keeping code blocks intact and giving each section an id, a parent link and its position in the source, ready for RAG and graph pipelines. Install with `pip install markdown-chunkify`.
+
 - [gemini-scribe](https://github.com/Gal-Gilor/gemini-scribe): FastAPI application that converts PDF documents to Markdown using Gemini. Deployed to Cloud Run with async processing and Google Cloud Storage integration.
 
 - [markdown-mcp](https://github.com/Gal-Gilor/markdown-mcp): MCP server built with FastMCP and FastAPI that splits Markdown documents into hierarchical sections, preserving parent-child and sibling relationships.
