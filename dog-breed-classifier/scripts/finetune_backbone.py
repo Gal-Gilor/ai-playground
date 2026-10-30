@@ -1,7 +1,7 @@
 """Fine-tune EfficientNet-B4 backbone on the dog breed dataset.
 
-Loads a checkpoint produced by ``train_classification_head``, unfreezes the last
-``num_unfrozen_blocks`` entries of ``model.features``, and trains both the backbone
+Loads a checkpoint produced by `train_classification_head`, unfreezes the last
+`num_unfrozen_blocks` entries of `model.features`, and trains both the backbone
 blocks and the classifier head jointly at a small, uniform learning rate.
 
 BatchNorm layers are kept in eval mode throughout to preserve the ImageNet statistics
@@ -39,14 +39,15 @@ def build_model(
     """Load a head-trained checkpoint and prepare the model for backbone fine-tuning.
 
     All parameters are frozen first, then the classifier head and the last
-    ``num_unfrozen_blocks`` entries of ``model.features`` are unfrozen.
+    `num_unfrozen_blocks` entries of `model.features` are unfrozen.
 
     Args:
-        checkpoint_path: Path to a ``best.pth`` file from ``train_classification_head``.
-        num_unfrozen_blocks: Number of trailing ``model.features`` blocks to unfreeze.
+        checkpoint_path (str | Path): Path to a `best.pth` file from
+            `train_classification_head`.
+        num_unfrozen_blocks (int): Number of trailing `model.features` blocks to unfreeze.
 
     Returns:
-        A ``(model, classes)`` tuple where ``classes`` is the ordered list of breed names
+        A `(model, classes)` tuple where `classes` is the ordered list of breed names
         stored in the checkpoint.
     """
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)

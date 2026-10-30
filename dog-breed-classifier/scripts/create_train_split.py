@@ -24,10 +24,10 @@ def _copy_file(src_dst: tuple[str, str]) -> str | None:
     """Copy src to dst.
 
     Args:
-        src_dst: A ``(src, dst)`` pair of path strings.
+        src_dst (tuple[str, str]): A `(src, dst)` pair of path strings.
 
     Returns:
-        The source path string if the source file is missing, otherwise ``None``.
+        The source path string if the source file is missing, otherwise `None`.
     """
     src, dst = src_dst
     if not Path(src).exists():
@@ -48,16 +48,19 @@ def create_train_split(
     """Copy cropped images into {train_directory}/{breed}/{id}.jpg.
 
     Args:
-        labels_csv: Path to the CSV containing image IDs and breed labels.
-        cropped_images_directory: Directory containing the cropped source images.
-        train_directory: Destination root; images land at {train_directory}/{breed}/{id}.jpg.
-        id_column: Column name for the image ID.
-        breed_column: Column name for the breed label.
-        visible_csv: Optional CSV with a visibility column (stage 4 output). None = copy all.
-        visible_column: Column name in visible_csv that holds the boolean visibility flag.
+        labels_csv (Path): Path to the CSV containing image IDs and breed labels.
+        cropped_images_directory (Path): Directory containing the cropped source images.
+        train_directory (Path): Destination root; images land at
+            {train_directory}/{breed}/{id}.jpg.
+        id_column (str): Column name for the image ID.
+        breed_column (str): Column name for the breed label.
+        visible_csv (Path | None): Optional CSV with a visibility column (stage 4 output). None
+            = copy all.
+        visible_column (str): Column name in visible_csv that holds the boolean visibility
+            flag.
 
     Returns:
-        A ``(copied, skipped)`` tuple where ``skipped`` is the count of missing source images.
+        A `(copied, skipped)` tuple where `skipped` is the count of missing source images.
     """
     df = pd.read_csv(labels_csv)
 

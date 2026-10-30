@@ -12,9 +12,9 @@ def get_image_path(images_dir: Path, image_id: str, extension: str = ".jpg") -> 
     """Build the path to an image given its ID.
 
     Args:
-        images_dir: Directory containing the images.
-        image_id: Unique identifier for the image.
-        extension: File extension including the dot.
+        images_dir (Path): Directory containing the images.
+        image_id (str): Unique identifier for the image.
+        extension (str): File extension including the dot.
 
     Returns:
         Full path to the image file.
@@ -28,8 +28,8 @@ def load_labels(path: Path, bounding_boxes_column: str = "dog_bounding_boxes") -
     Handles missing values (empty list fallback).
 
     Args:
-        path: Path to the labels CSV file.
-        bounding_boxes_column: Name of the column containing bounding box data.
+        path (Path): Path to the labels CSV file.
+        bounding_boxes_column (str): Name of the column containing bounding box data.
 
     Returns:
         DataFrame with the bounding boxes column parsed into Python lists.
@@ -45,8 +45,8 @@ def create_breed_directories(directory: Path, breeds: Iterable[str]) -> None:
     """Create one subdirectory per breed under `directory`.
 
     Args:
-        directory: Parent directory under which breed subdirectories are created.
-        breeds: Iterable of breed names to create as subdirectories.
+        directory (Path): Parent directory under which breed subdirectories are created.
+        breeds (Iterable[str]): Iterable of breed names to create as subdirectories.
     """
     for breed in breeds:
         (directory / breed).mkdir(parents=True, exist_ok=True)

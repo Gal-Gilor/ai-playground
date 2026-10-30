@@ -22,7 +22,8 @@ def unpack_bounding_boxes(df: pd.DataFrame) -> pd.DataFrame:
     """Explode df to one row per bounding box and prepend a crop_id column.
 
     Args:
-        df: Labels DataFrame with one row per source image and a list of bounding boxes
+        df (pd.DataFrame): Labels DataFrame with one row per source image and a list of
+            bounding boxes
             per row.
 
     Returns:
