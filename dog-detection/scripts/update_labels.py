@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +14,8 @@ from src.utils import _get_class_mapping
 from src.utils import create_batches
 from src.utils import get_device_name
 from src.utils import get_image_path
+
+PROGRESS_EVERY = 500
 
 
 def _dog_detection_record(image_id: str, dog_bounding_boxes: list[list[float]]) -> dict:
@@ -100,6 +103,10 @@ def run_inference(
 ) -> list[dict]:
     """Run YOLO inference over a list of images, resuming from checkpoint if available.
 
+    Shows a tqdm progress bar when stderr is a terminal. Otherwise, prints a plain
+    progress line every PROGRESS_EVERY images and at the end, so batch logs such as
+    Cloud Logging show progress.
+
     Args:
         image_ids (list[str]): Image identifiers to process.
         images_dir (Path): Directory containing the image files.
@@ -121,7 +128,11 @@ def run_inference(
 
     dog_id = next(k for k, v in class_mapping.items() if v == "dog")
 
-    with tqdm(total=len(pending_ids), unit="img") as pbar:
+    total = len(pending_ids)
+    interactive = sys.stderr.isatty()
+    processed = 0
+
+    with tqdm(total=total, unit="img", disable=not interactive) as pbar:
         for batch_ids in create_batches(pending_ids, batch_size):
             batch_paths = [str(get_image_path(images_dir, image_id)) for image_id in batch_ids]
             for image_id, yolo_result in zip(
@@ -132,7 +143,10 @@ def run_inference(
                 detection = _dog_detection_record(image_id, dog_bounding_boxes)
                 append_checkpoint(checkpoint_path, detection)
                 completed[str(image_id)] = detection
+                processed += 1
                 pbar.update(1)
+                if not interactive and (processed % PROGRESS_EVERY == 0 or processed == total):
+                    print(f"Processed {processed}/{total} images", flush=True)
 
     return list(completed.values())
 
