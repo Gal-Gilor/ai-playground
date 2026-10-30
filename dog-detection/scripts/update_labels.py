@@ -1,3 +1,4 @@
+import argparse
 import json
 from pathlib import Path
 
@@ -156,27 +157,61 @@ def update_labels(
     updated_df.to_csv(labels_path, index=False)
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse and return command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Detect dogs in images with YOLO and add the results to the labels CSV."
+    )
+    parser.add_argument(
+        "--images-directory",
+        type=Path,
+        default=Path(config["path-to-images"]),
+        help=f"Directory containing source JPEG images (default: {config['path-to-images']})",
+    )
+    parser.add_argument(
+        "--labels-csv",
+        type=Path,
+        default=Path(config["path-to-labels"]),
+        help=f"Path to the labels CSV to read (default: {config['path-to-labels']})",
+    )
+    parser.add_argument(
+        "--output-csv",
+        type=Path,
+        default=None,
+        help="Path to write the updated labels CSV (default: overwrite --labels-csv)",
+    )
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        default=None,
+        help="Path to the JSONL checkpoint file (default: next to the output CSV)",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
     """Run the full dog-detection pipeline and update the labels CSV."""
-    device = get_device_name()
-    images_dir = Path(config["path-to-images"])
-    labels_path = Path(config["path-to-labels"])
-    checkpoint_path = labels_path.with_suffix(".checkpoint.jsonl")
+    args = parse_args()
+    labels_path = args.labels_csv
+    output_path = args.output_csv or labels_path
+    checkpoint_path = args.checkpoint_path or output_path.with_suffix(".checkpoint.jsonl")
 
+    device = get_device_name()
     df = pd.read_csv(labels_path)
     class_mapping = _get_class_mapping(config)
 
     detections = run_inference(
         list(df["id"].astype(str)),
-        images_dir,
+        args.images_directory,
         model,
         class_mapping,
         device,
         checkpoint_path=checkpoint_path,
     )
-    update_labels(df, detections, labels_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    update_labels(df, detections, output_path)
     checkpoint_path.unlink(missing_ok=True)
-    print(f"Done. Updated {labels_path} ({len(df)} rows).")
+    print(f"Done. Updated {output_path} ({len(df)} rows).")
 
 
 if __name__ == "__main__":
