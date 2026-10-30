@@ -25,12 +25,13 @@ def create_test_split(train_directory: Path, test_size: float = 0.25) -> tuple[i
     to the same split rather than moving an additional fraction each time.
 
     Args:
-        train_directory: Directory containing per-breed subdirectories of training images.
-        test_size: Target fraction of each breed's total images (train + test) to place
+        train_directory (Path): Directory containing per-breed subdirectories of training
+            images.
+        test_size (float): Target fraction of each breed's total images (train + test) to place
             in the test split. Breeds where floor(total * test_size) is zero are skipped.
 
     Returns:
-        A ``(moved, skipped)`` tuple where ``skipped`` is the number of breeds with
+        A `(moved, skipped)` tuple where `skipped` is the number of breeds with
         too few images to contribute any test examples.
     """
     test_directory = train_directory.parent / "test"

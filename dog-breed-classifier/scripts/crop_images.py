@@ -39,9 +39,9 @@ class BoundingBox(BaseModel):
         """Build a BoundingBox from raw float coordinates, clamped to image bounds.
 
         Args:
-            raw: Four floats [x_min, y_min, x_max, y_max].
-            image_width: Width of the source image in pixels.
-            image_height: Height of the source image in pixels.
+            raw (list[float]): Four floats [x_min, y_min, x_max, y_max].
+            image_width (int): Width of the source image in pixels.
+            image_height (int): Height of the source image in pixels.
 
         Returns:
             BoundingBox with coordinates rounded and clamped to [0, image_width/height].
@@ -62,8 +62,8 @@ def crop_image(image: Image.Image, bounding_box: BoundingBox) -> Image.Image:
     """Return a cropped copy of image defined by bounding_box.
 
     Args:
-        image: The source image to crop.
-        bounding_box: Pixel coordinates of the crop region.
+        image (Image.Image): The source image to crop.
+        bounding_box (BoundingBox): Pixel coordinates of the crop region.
 
     Returns:
         A new Image containing only the cropped region.
@@ -87,15 +87,16 @@ def process_row(
     """Open the source image and save one crop per bounding box.
 
     Args:
-        row: A single row from the labels DataFrame.
-        images_directory: Directory containing the source JPEG images.
-        output_directory: Directory where cropped images will be saved.
-        resize: (width, height) to resize each crop. None skips resizing.
-        source_id_column: Column name for the source image ID.
-        breed_column: Column name for the breed label.
-        bounding_boxes_column: Column name for the bounding boxes list.
-        crop_id_column: Column name for the pre-assigned crop UUID.
-        output_id_column: Column name for the crop UUID in the output records.
+        row (pd.Series): A single row from the labels DataFrame.
+        images_directory (Path): Directory containing the source JPEG images.
+        output_directory (Path): Directory where cropped images will be saved.
+        resize (tuple[int, int] | None): (width, height) to resize each crop. None skips
+            resizing.
+        source_id_column (str): Column name for the source image ID.
+        breed_column (str): Column name for the breed label.
+        bounding_boxes_column (str): Column name for the bounding boxes list.
+        crop_id_column (str): Column name for the pre-assigned crop UUID.
+        output_id_column (str): Column name for the crop UUID in the output records.
 
     Returns:
         List of dicts with one entry per saved crop.
@@ -151,10 +152,11 @@ def crop_images(
     """Iterate all label rows and extract crops for each annotated bounding box.
 
     Args:
-        df: Labels DataFrame with parsed dog_bounding_boxes column.
-        images_directory: Directory containing source JPEG images.
-        output_directory: Directory where cropped images will be saved.
-        resize: Optional (width, height) to resize each crop after cropping.
+        df (pd.DataFrame): Labels DataFrame with parsed dog_bounding_boxes column.
+        images_directory (Path): Directory containing source JPEG images.
+        output_directory (Path): Directory where cropped images will be saved.
+        resize (tuple[int, int] | None): Optional (width, height) to resize each crop after
+            cropping.
 
     Returns:
         List of crop records (id, breed).

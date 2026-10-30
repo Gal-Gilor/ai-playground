@@ -36,16 +36,16 @@ def load_model(
 ) -> tuple[nn.Module, list[str]]:
     """Load a checkpoint and reconstruct the model for inference.
 
-    Reads ``classes``, ``head_hidden_units``, and ``head_dropout_rate`` from the
+    Reads `classes`, `head_hidden_units`, and `head_dropout_rate` from the
     checkpoint to reconstruct the exact architecture trained in stage 5 or 6.
 
     Args:
-        checkpoint_path: Path to a ``.pth`` checkpoint from train_classification_head
+        checkpoint_path (Path): Path to a `.pth` checkpoint from train_classification_head
             or finetune_backbone.
-        device: Device to load the model onto.
+        device (torch.device): Device to load the model onto.
 
     Returns:
-        A ``(model, classes)`` tuple where ``classes`` is the ordered list of breed names.
+        A `(model, classes)` tuple where `classes` is the ordered list of breed names.
     """
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     classes: list[str] = checkpoint["classes"]
@@ -79,9 +79,9 @@ def get_transforms(
     """Build the validation transform (matches trainer.get_dataloaders val_transform).
 
     Args:
-        center_crop_size: Size to center-crop each image to before normalization.
-        normalize_mean: Per-channel normalization mean (ImageNet default).
-        normalize_std: Per-channel normalization std (ImageNet default).
+        center_crop_size (int): Size to center-crop each image to before normalization.
+        normalize_mean (list[float]): Per-channel normalization mean (ImageNet default).
+        normalize_std (list[float]): Per-channel normalization std (ImageNet default).
 
     Returns:
         A composed torchvision transform.
@@ -104,10 +104,11 @@ def run_inference(
     """Run inference on all images in the dataloader and collect per-image results.
 
     Args:
-        model: Model in eval mode.
-        dataloader: DataLoader with ``shuffle=False`` so image order is deterministic.
-        classes: Ordered list of class names matching the model's output indices.
-        device: Device the model is on.
+        model (nn.Module): Model in eval mode.
+        dataloader (DataLoader): DataLoader with `shuffle=False` so image order is
+            deterministic.
+        classes (list[str]): Ordered list of class names matching the model's output indices.
+        device (torch.device): Device the model is on.
 
     Returns:
         DataFrame with columns: image_path, true_label, predicted_label, confidence,
@@ -156,7 +157,7 @@ def print_summary(df: pd.DataFrame) -> None:
     """Print overall accuracy and a per-class accuracy table to stdout.
 
     Args:
-        df: Results DataFrame from run_inference.
+        df (pd.DataFrame): Results DataFrame from run_inference.
     """
     overall_acc = df["correct"].mean() * 100
     print(

@@ -38,9 +38,9 @@ def build_model(
     Dropout(head_dropout_rate) → Linear(head_hidden_units, num_classes).
 
     Args:
-        num_classes: Number of output classes.
-        head_hidden_units: Size of the intermediate dense layer.
-        head_dropout_rate: Dropout rate applied after the intermediate dense layer.
+        num_classes (int): Number of output classes.
+        head_hidden_units (int): Size of the intermediate dense layer.
+        head_dropout_rate (float): Dropout rate applied after the intermediate dense layer.
 
     Returns:
         The modified model.

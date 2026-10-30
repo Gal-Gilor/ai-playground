@@ -24,7 +24,7 @@ def get_device() -> torch.device:
     """Return the best available device, preferring CUDA over CPU.
 
     Returns:
-        torch.device: ``cuda:0`` if a CUDA-capable GPU is available, otherwise ``cpu``.
+        torch.device: `cuda:0` if a CUDA-capable GPU is available, otherwise `cpu`.
     """
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(0)
@@ -37,10 +37,10 @@ def get_device() -> torch.device:
 def set_bn_eval(model: nn.Module) -> None:
     """Set all BatchNorm layers to eval mode to preserve ImageNet statistics.
 
-    Call this after ``model.train()`` at the start of every training epoch.
+    Call this after `model.train()` at the start of every training epoch.
 
     Args:
-        model: The model whose BatchNorm layers should be frozen.
+        model (nn.Module): The model whose BatchNorm layers should be frozen.
     """
     for module in model.modules():
         if isinstance(module, (nn.BatchNorm2d, nn.BatchNorm1d)):
@@ -52,14 +52,14 @@ def get_dataloaders(
 ) -> tuple[DataLoader, DataLoader, list[str], torch.Tensor]:
     """Build train and validation DataLoaders from a stratified split of the train directory.
 
-    Reserves ``cfg.val_split`` fraction of each breed for validation (stratified).
+    Reserves `cfg.val_split` fraction of each breed for validation (stratified).
     Class weights are computed from training indices only to avoid leakage.
 
     Args:
-        cfg: Config with directory paths and transform parameters.
+        cfg (BaseTrainingConfig): Config with directory paths and transform parameters.
 
     Returns:
-        A ``(train_loader, val_loader, classes, class_weights)`` tuple.
+        A `(train_loader, val_loader, classes, class_weights)` tuple.
     """
     train_transform = transforms.Compose(
         [
@@ -125,8 +125,9 @@ def save_curves(history: dict[str, list[float]], run_dir: Path) -> None:
     """Save train/val loss and accuracy curves as curves.jpg in run_dir.
 
     Args:
-        history: Dict with keys train_loss, val_loss, train_acc, val_acc.
-        run_dir: Directory where curves.jpg is written.
+        history (dict[str, list[float]]): Dict with keys train_loss, val_loss, train_acc,
+            val_acc.
+        run_dir (Path): Directory where curves.jpg is written.
     """
     epochs = range(1, len(history["train_loss"]) + 1)
     fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(12, 4))
@@ -165,21 +166,22 @@ def train(
 ) -> dict[str, float | int]:
     """Train the model, saving checkpoints and curves into run_dir.
 
-    Saves ``best.pth`` whenever validation loss improves and ``latest.pth``
+    Saves `best.pth` whenever validation loss improves and `latest.pth`
     after every epoch. Stops early if validation loss has not improved for
-    ``cfg.early_stopping_patience`` consecutive epochs.
+    `cfg.early_stopping_patience` consecutive epochs.
 
     Args:
-        model: The model to train.
-        train_loader: DataLoader for the training split.
-        val_loader: DataLoader for the validation split.
-        cfg: Config containing training hyperparameters and early_stopping_patience.
-        device: Device to run training on.
-        run_dir: Directory for this run's artifacts (must already exist).
-        class_weights: Per-class loss weights to handle class imbalance.
-        classes: Ordered list of class names, used to label checkpoints.
-        optimizer: Optimizer to use for training.
-        freeze_bn: If True, keep BatchNorm layers in eval mode during training
+        model (nn.Module): The model to train.
+        train_loader (DataLoader): DataLoader for the training split.
+        val_loader (DataLoader): DataLoader for the validation split.
+        cfg (BaseTrainingConfig): Config containing training hyperparameters and
+            early_stopping_patience.
+        device (torch.device): Device to run training on.
+        run_dir (Path): Directory for this run's artifacts (must already exist).
+        class_weights (torch.Tensor): Per-class loss weights to handle class imbalance.
+        classes (list[str]): Ordered list of class names, used to label checkpoints.
+        optimizer (torch.optim.Optimizer): Optimizer to use for training.
+        freeze_bn (bool): If True, keep BatchNorm layers in eval mode during training
             to preserve ImageNet statistics (used during backbone fine-tuning).
 
     Returns:

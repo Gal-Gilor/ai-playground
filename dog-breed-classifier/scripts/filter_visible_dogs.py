@@ -83,15 +83,15 @@ async def classify_image(
     """Send a single image to Gemini and return its visibility classification.
 
     Args:
-        client: Authenticated Gemini client.
-        image_id: Crop UUID used to identify this image in the output.
-        breed: Breed label for this crop.
-        image_path: Path to the JPEG file on disk.
-        limiter: Rate limiter to stay within API quota.
-        model: Gemini model name.
+        client (genai.Client): Authenticated Gemini client.
+        image_id (str): Crop UUID used to identify this image in the output.
+        breed (str): Breed label for this crop.
+        image_path (Path): Path to the JPEG file on disk.
+        limiter (AsyncLimiter): Rate limiter to stay within API quota.
+        model (str): Gemini model name.
 
     Returns:
-        Dict with keys ``id``, ``breed``, and ``is_visible``.
+        Dict with keys `id`, `breed`, and `is_visible`.
     """
     image_bytes = image_path.read_bytes()
     async with limiter:
@@ -119,12 +119,13 @@ async def _run_all(
     """Dispatch all pending classification tasks concurrently, writing each row on completion.
 
     Args:
-        client: Authenticated Gemini client.
-        pending: List of (image_id, breed, image_path) tuples to classify.
-        limiter: Rate limiter shared across all tasks.
-        cfg: Pipeline configuration.
-        writer: CSV writer to receive each result row immediately.
-        f: Open file handle; flushed after every row.
+        client (genai.Client): Authenticated Gemini client.
+        pending (list[tuple[str, str, Path]]): List of (image_id, breed, image_path) tuples to
+            classify.
+        limiter (AsyncLimiter): Rate limiter shared across all tasks.
+        cfg (FilterVisibleDogsConfig): Pipeline configuration.
+        writer (csv.DictWriter): CSV writer to receive each result row immediately.
+        f (IO[str]): Open file handle; flushed after every row.
 
     Returns:
         Count of successfully classified images.
