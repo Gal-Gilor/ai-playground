@@ -133,8 +133,8 @@ def create_batches(iterable: Iterable[T], batch_size: int = 20) -> Iterator[tupl
     """Break an iterable into fixed-size chunks.
 
     Args:
-        iterable: The iterable to batch.
-        batch_size: Size of each batch. Must be >= 1. Defaults to 20.
+        iterable (Iterable[T]): The iterable to batch.
+        batch_size (int): Size of each batch. Must be >= 1. Defaults to 20.
 
     Returns:
         Iterator yielding tuples of items from the iterable.
@@ -185,9 +185,9 @@ async def read_chunks_in_batches(
     file into memory, making it suitable for large files.
 
     Args:
-        file_path: Path to the JSONL file containing chunk data.
-        batch_size: Number of chunks per batch. Must be >= 1. Defaults to 10.
-        strict: If True, raise exception on JSON parse errors. If False, log
+        file_path (str | Path): Path to the JSONL file containing chunk data.
+        batch_size (int): Number of chunks per batch. Must be >= 1. Defaults to 10.
+        strict (bool): If True, raise exception on JSON parse errors. If False, log
             and skip invalid lines. Defaults to False.
 
     Yields:
