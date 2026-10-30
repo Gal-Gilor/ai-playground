@@ -183,3 +183,6 @@ CLAUDE.md
 
 # data files
 data/
+
+# YOLO weights downloaded to the project root at runtime
+/*.pt

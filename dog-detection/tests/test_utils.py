@@ -436,6 +436,7 @@ CLASS_MAPPING = {0: "person", 16: "dog"}
 
 
 def test_get_image_path_returns_correct_path(tmp_path):
+    """Image paths are built as <images_dir>/<image_id>.jpg."""
     path = get_image_path(tmp_path, "abc123")
     assert path == tmp_path / "abc123.jpg"
 
@@ -444,15 +445,18 @@ def test_get_image_path_returns_correct_path(tmp_path):
 
 
 def test_get_class_mapping_standard():
+    """The config list is turned into an id-to-name dict."""
     config = {"class-detection-ids": [{"id": 0, "name": "person"}, {"id": 16, "name": "dog"}]}
     assert _get_class_mapping(config) == {0: "person", 16: "dog"}
 
 
 def test_get_class_mapping_empty():
+    """A config without class entries gives an empty mapping instead of raising."""
     assert _get_class_mapping({}) == {}
 
 
 def test_get_class_mapping_custom_keys():
+    """Callers can override the config key names the mapping is read from."""
     config = {
         "detections": [
             {"class_id": 1, "class_name": "cat"},
@@ -472,11 +476,13 @@ def test_get_class_mapping_custom_keys():
 
 
 def test_extract_bounding_box_first():
+    """The box for detection 0 is returned as [x1, y1, x2, y2]."""
     result = _make_yolo_result([16], [[10.0, 20.0, 30.0, 40.0]])
     assert _extract_bounding_box(result, 0) == [10.0, 20.0, 30.0, 40.0]
 
 
 def test_extract_bounding_box_second():
+    """The index picks the matching row, not always the first box."""
     result = _make_yolo_result([0, 16], [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]])
     assert _extract_bounding_box(result, 1) == [5.0, 6.0, 7.0, 8.0]
 
@@ -485,16 +491,19 @@ def test_extract_bounding_box_second():
 
 
 def test_extract_class_bounding_boxes_matching():
+    """Boxes of the requested class are returned."""
     result = _make_yolo_result([16], [[10.0, 20.0, 30.0, 40.0]])
     assert _extract_class_bounding_boxes(result, 16) == [[10.0, 20.0, 30.0, 40.0]]
 
 
 def test_extract_class_bounding_boxes_no_match():
+    """A result with no detections of the class gives an empty list."""
     result = _make_yolo_result([0], [[10.0, 20.0, 30.0, 40.0]])
     assert _extract_class_bounding_boxes(result, 16) == []
 
 
 def test_extract_class_bounding_boxes_multiple_matches():
+    """Only boxes of the requested class are kept, in detection order."""
     result = _make_yolo_result(
         [16, 0, 16],
         [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0], [9.0, 10.0, 11.0, 12.0]],
@@ -517,6 +526,7 @@ def test_extract_class_bounding_boxes_multiple_matches():
     ],
 )
 def test_single_dog_no_person_image(class_ids, expected):
+    """Zero or one dog and no person passes; several dogs or any person fails."""
     result = _make_yolo_result(class_ids, [[0.0, 0.0, 1.0, 1.0]] * len(class_ids))
     assert _single_dog_no_person_image(result, CLASS_MAPPING) is expected
 
@@ -534,6 +544,7 @@ def test_single_dog_no_person_image(class_ids, expected):
     ],
 )
 def test_any_dog_no_person_image(class_ids, expected):
+    """One or more dogs and no person passes; no dogs or any person fails."""
     result = _make_yolo_result(class_ids, [[0.0, 0.0, 1.0, 1.0]] * len(class_ids))
     assert _any_dog_no_person_image(result, CLASS_MAPPING) is expected
 
@@ -542,11 +553,13 @@ def test_any_dog_no_person_image(class_ids, expected):
 
 
 def test_get_device_name_cuda_available():
+    """The device name is cuda:0 when CUDA is available."""
     with patch("torch.cuda.is_available", return_value=True):
         assert get_device_name() == "cuda:0"
 
 
 def test_get_device_name_cuda_unavailable():
+    """Detection fails fast without CUDA instead of silently running on CPU."""
     with patch("torch.cuda.is_available", return_value=False):
         with pytest.raises(RuntimeError, match="CUDA not available"):
             get_device_name()

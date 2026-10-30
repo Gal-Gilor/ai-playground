@@ -13,7 +13,7 @@ async def extract_file_path_from_gsutil_url(url_or_path: str) -> str:
     """Extract file path from gsutil URL or return input if already a path.
 
     Args:
-        url_or_path: A gsutil URL (gs://bucket/path/to/file) or file path.
+        url_or_path (str): A gsutil URL (gs://bucket/path/to/file) or file path.
 
     Returns:
         The file path portion (without bucket) or the original input if not
@@ -46,7 +46,8 @@ async def create_storage_client(
     """Create an async Google Cloud Storage client.
 
     Args:
-        session: Optional aiohttp session. If None, client will create its own.
+        session (Optional[aiohttp.ClientSession]): Optional aiohttp session. If None, client
+            will create its own.
 
     Returns:
         Storage: Configured async Google Cloud Storage client instance.
@@ -74,8 +75,8 @@ class AsyncStorageBucket:
         """Initialize the async storage bucket.
 
         Args:
-            client: Async Google Cloud Storage client instance.
-            name: Name of the storage bucket.
+            client (Storage): Async Google Cloud Storage client instance.
+            name (str): Name of the storage bucket.
         """
         self.client = client
         self.name = name
@@ -105,7 +106,7 @@ class AsyncStorageBucket:
         """List all blobs in the bucket.
 
         Args:
-            prefix: Optional prefix to filter blobs.
+            prefix (Optional[str]): Optional prefix to filter blobs.
 
         Returns:
             list: List of blob items in the bucket.
@@ -130,7 +131,7 @@ class AsyncStorageBucket:
         """Check if a blob exists in the bucket.
 
         Args:
-            blob_name: Name of the blob to check.
+            blob_name (str): Name of the blob to check.
 
         Returns:
             bool: True if blob exists, False otherwise."""
@@ -151,9 +152,10 @@ class AsyncStorageBucket:
         """Upload a file to the bucket.
 
         Args:
-            source_file_path: Path to the local file to upload.
-            destination_blob_name: Name for the blob in the bucket.
-            content_type: MIME type of the file. If None, will be auto-detected.
+            source_file_path (str): Path to the local file to upload.
+            destination_blob_name (str): Name for the blob in the bucket.
+            content_type (Optional[str]): MIME type of the file. If None, will be auto-
+                detected.
 
         Returns:
             dict: Upload response containing metadata about the uploaded object.
@@ -189,8 +191,8 @@ class AsyncStorageBucket:
         """Download a blob from the bucket.
 
         Args:
-            source_blob_name: Name of the blob to download.
-            destination_file_path: Path where the file should be saved.
+            source_blob_name (str): Name of the blob to download.
+            destination_file_path (str): Path where the file should be saved.
 
         Raises:
             Exception: If download operation fails.
@@ -223,7 +225,7 @@ class AsyncStorageBucket:
         """Delete a blob from the bucket.
 
         Args:
-            blob_name: Name of the blob to delete.
+            blob_name (str): Name of the blob to delete.
 
         Raises:
             Exception: If deletion operation fails.
@@ -243,7 +245,7 @@ class AsyncStorageBucket:
         """Get metadata for a blob in the bucket.
 
         Args:
-            blob_name: Name of the blob to get metadata for.
+            blob_name (str): Name of the blob to get metadata for.
 
         Returns:
             dict: Blob metadata.
@@ -275,9 +277,9 @@ async def list_public_blobs(
     """List blobs in a public GCS bucket without credentials.
 
     Args:
-        session: aiohttp session to use for the request.
-        bucket_name: Name of the public GCS bucket.
-        prefix: Optional prefix to filter blobs.
+        session (aiohttp.ClientSession): aiohttp session to use for the request.
+        bucket_name (str): Name of the public GCS bucket.
+        prefix (Optional[str]): Optional prefix to filter blobs.
 
     Returns:
         list: List of blob items (dicts with at least a "name" key).
@@ -302,10 +304,10 @@ async def download_public_blob(
     """Download a single blob from a public GCS bucket without credentials.
 
     Args:
-        session: aiohttp session to use for the request.
-        bucket_name: Name of the public GCS bucket.
-        blob_name: Blob name (path inside the bucket) to download.
-        destination_file_path: Local path where the file will be written.
+        session (aiohttp.ClientSession): aiohttp session to use for the request.
+        bucket_name (str): Name of the public GCS bucket.
+        blob_name (str): Blob name (path inside the bucket) to download.
+        destination_file_path (str): Local path where the file will be written.
 
     Raises:
         aiohttp.ClientResponseError: If the download request fails.
@@ -326,8 +328,9 @@ async def get_storage_bucket(
     """Get an async storage bucket instance.
 
     Args:
-        bucket_name: Name of the storage bucket.
-        session: Optional aiohttp session. If None, client will create its own.
+        bucket_name (str): Name of the storage bucket.
+        session (Optional[aiohttp.ClientSession]): Optional aiohttp session. If None, client
+            will create its own.
 
     Returns:
         AsyncStorageBucket: Configured async storage bucket instance.

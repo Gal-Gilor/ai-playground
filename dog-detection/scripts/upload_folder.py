@@ -38,11 +38,11 @@ async def main(
     Lists existing blobs once so the run is resumable after an interruption.
 
     Args:
-        folder_to_upload: Local directory containing files to upload.
+        folder_to_upload (Path | None): Local directory containing files to upload.
             Defaults to config's path-to-images.
-        destination_prefix: Bucket path prefix for uploaded blobs.
+        destination_prefix (str | None): Bucket path prefix for uploaded blobs.
             Defaults to config's upload-destination-prefix.
-        file_type_suffix: File extension filter (e.g. ".jpg"). Empty string
+        file_type_suffix (str | None): File extension filter (e.g. ".jpg"). Empty string
             or None uploads all files. Defaults to config's upload-file-suffix.
 
     Raises:

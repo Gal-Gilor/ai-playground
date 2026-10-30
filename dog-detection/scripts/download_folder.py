@@ -59,14 +59,14 @@ async def main(
     plain HTTP — no GCP credentials required.
 
     Args:
-        output_dir: Local directory to write downloaded files into.
+        output_dir (Path | None): Local directory to write downloaded files into.
             Defaults to config's download-output-dir.
-        source_prefix: GCS folder prefix to download from.
+        source_prefix (str | None): GCS folder prefix to download from.
             Defaults to config's download-source-prefix.
-        file_type_suffix: File extension filter (e.g. ".jpg"). Empty string
+        file_type_suffix (str | None): File extension filter (e.g. ".jpg"). Empty string
             or None downloads all files. Defaults to config's download-file-suffix.
-        public: If True, use unauthenticated HTTP download (for public buckets).
-        bucket_name: GCS bucket name. Defaults to GOOGLE_CLOUD_BUCKET env var.
+        public (bool): If True, use unauthenticated HTTP download (for public buckets).
+        bucket_name (str | None): GCS bucket name. Defaults to GOOGLE_CLOUD_BUCKET env var.
 
     Raises:
         RuntimeError: If the configured GCS bucket is not accessible.
