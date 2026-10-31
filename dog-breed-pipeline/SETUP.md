@@ -48,13 +48,14 @@ gcloud billing projects describe $PROJECT_ID
 
 ## 4. Enable the APIs
 
-The pipeline uses Vertex AI, Artifact Registry, Cloud Build and Cloud Storage, and each API must be enabled first.
+The pipeline uses Vertex AI, Artifact Registry, Cloud Build and Cloud Storage, and each API must be enabled first. The Vertex AI SDK also uses Cloud Resource Manager to confirm the output bucket belongs to the project.
 
 ```bash
 gcloud services enable \
   aiplatform.googleapis.com \
   artifactregistry.googleapis.com \
   cloudbuild.googleapis.com \
+  cloudresourcemanager.googleapis.com \
   storage.googleapis.com
 ```
 

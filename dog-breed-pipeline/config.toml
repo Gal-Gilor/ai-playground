@@ -1,0 +1,19 @@
+[vertex_ai]
+project = "pooch-perfect"
+region = "us-central1"
+service_account = "dog-breed-pipeline@pooch-perfect.iam.gserviceaccount.com"
+artifact_registry = "us-central1-docker.pkg.dev/pooch-perfect/dog-breed-pipeline"
+accelerator_type = "NVIDIA_TESLA_T4"
+accelerator_count = 1
+
+[cloud_storage]
+location = "us-central1"
+private_bucket = "pooch-perfect-private"
+pipeline_root = "gs://pooch-perfect-private/pipeline-root"
+raw_labels_csv = "gs://pooch-perfect-public/data/labels.csv"
+raw_images = "gs://pooch-perfect-public/data/raw"
+
+[gemini]
+model = "gemini-3.5-flash"
+location = "global"
+rate_limit = 60
