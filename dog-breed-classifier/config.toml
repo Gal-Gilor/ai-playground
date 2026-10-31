@@ -28,6 +28,7 @@ output_csv = "data/cropped_visible_labels.csv"
 model = "gemini-3.5-flash"
 rate_limit = 60
 max_retries = 5
+passes = 2
 
 [training.create_train_split]
 train_directory = "data/train"

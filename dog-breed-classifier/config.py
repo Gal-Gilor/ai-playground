@@ -126,9 +126,16 @@ class FilterVisibleDogsConfig(BaseModel):
     output_csv: str = Field(description="Output CSV: id, breed, is_visible")
     model: str = Field(default="gemini-3.5-flash", description="Gemini model name")
     rate_limit: float = Field(
-        default=10.0, description="Max requests per second (AsyncLimiter)"
+        default=10.0, description="Max requests per minute (AsyncLimiter)"
     )
-    max_retries: int = Field(default=5, description="Retry attempts on transient API errors")
+    max_retries: int = Field(
+        default=5,
+        description="Attempts per request, including the first, on transient API errors",
+    )
+    passes: int = Field(
+        default=2,
+        description="Passes over the crops; later passes retry only 429 failures",
+    )
 
 
 class TrainingConfig(BaseModel):

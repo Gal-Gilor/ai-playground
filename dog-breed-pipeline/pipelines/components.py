@@ -124,3 +124,38 @@ def crop_images(
             cropped_labels.path,
         ],
     )
+
+
+@dsl.container_component
+def filter_visible_dogs(
+    cropped_images: Input[Dataset],
+    cropped_labels: Input[Dataset],
+    visible_labels: Output[Dataset],
+):
+    """Ask Gemini whether each crop shows a clearly visible dog.
+
+    Args:
+        cropped_images (Input[Dataset]): Folder of cropped JPEG images.
+        cropped_labels (Input[Dataset]): CSV with the id and breed of each crop.
+        visible_labels (Output[Dataset]): Output CSV with id, breed and is_visible.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.filter_visible_dogs"],
+        args=[
+            "--cropped-images-directory",
+            cropped_images.path,
+            "--labels-csv",
+            cropped_labels.path,
+            "--output-csv",
+            visible_labels.path,
+            "--model",
+            config.gemini.model,
+            "--rate-limit",
+            str(config.gemini.rate_limit),
+            "--max-retries",
+            str(config.gemini.max_retries),
+            "--passes",
+            str(config.gemini.passes),
+        ],
+    )

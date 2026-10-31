@@ -16,4 +16,6 @@ raw_images = "gs://pooch-perfect-public/data/raw"
 [gemini]
 model = "gemini-3.5-flash"
 location = "global"
-rate_limit = 60
+rate_limit = 300
+max_retries = 5
+passes = 2

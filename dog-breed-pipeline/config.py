@@ -24,7 +24,9 @@ class CloudStorageConfig(BaseModel):
 class GeminiConfig(BaseModel):
     model: str = Field(description="Gemini model name for the visibility filter")
     location: str = Field(description="Gemini API location")
-    rate_limit: float = Field(description="Max Gemini requests per second")
+    rate_limit: float = Field(description="Max Gemini requests per minute")
+    max_retries: int = Field(description="Attempts per Gemini request, including the first")
+    passes: int = Field(description="Passes over the crops; later ones retry 429 failures")
 
 
 class Config(BaseModel):
