@@ -93,3 +93,34 @@ def unpack_bounding_boxes(labels: Input[Dataset], exploded_labels: Output[Datase
             exploded_labels.path,
         ],
     )
+
+
+@dsl.container_component
+def crop_images(
+    exploded_labels: Input[Dataset],
+    raw_images: str,
+    cropped_images: Output[Dataset],
+    cropped_labels: Output[Dataset],
+):
+    """Crop each bounding box from its raw image and resize it.
+
+    Args:
+        exploded_labels (Input[Dataset]): Labels CSV with one row per bounding box.
+        raw_images (str): Mounted path to the folder of raw JPEG images.
+        cropped_images (Output[Dataset]): Output folder of cropped JPEG images.
+        cropped_labels (Output[Dataset]): Output CSV with the id and breed of each crop.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.crop_images"],
+        args=[
+            "--labels-csv",
+            exploded_labels.path,
+            "--images-directory",
+            raw_images,
+            "--output-directory",
+            cropped_images.path,
+            "--output-csv",
+            cropped_labels.path,
+        ],
+    )
