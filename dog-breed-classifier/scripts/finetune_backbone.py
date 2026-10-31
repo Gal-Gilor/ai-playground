@@ -15,6 +15,7 @@ Usage (from project root):
 
 import argparse
 import datetime
+import json
 import logging
 from pathlib import Path
 
@@ -175,6 +176,12 @@ def parse_args() -> argparse.Namespace:
         default=cfg.early_stopping_patience if cfg else 5,
     )
     parser.add_argument(
+        "--run-directory",
+        type=str,
+        default=None,
+        help="Directory to write the run to (default: a timestamped output folder)",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default=None,
@@ -226,8 +233,11 @@ def main() -> None:
         early_stopping_patience=args.early_stopping_patience,
     )
 
-    run_dir = Path(cfg.output_directory) / datetime.datetime.now().strftime(
-        "run_finetune_%Y%m%d_%H%M%S"
+    run_dir = (
+        Path(args.run_directory)
+        if args.run_directory
+        else Path(cfg.output_directory)
+        / datetime.datetime.now().strftime("run_finetune_%Y%m%d_%H%M%S")
     )
     run_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Run directory: {run_dir}")
@@ -276,6 +286,8 @@ def main() -> None:
     }
     with open(run_dir / "params.yaml", "w") as f:
         yaml.safe_dump(params, f, sort_keys=False)
+    with open(run_dir / "metrics.json", "w") as f:
+        json.dump(metrics, f)
 
 
 if __name__ == "__main__":

@@ -200,6 +200,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to write results CSV (default: results.csv next to the checkpoint)",
     )
+    parser.add_argument(
+        "--metrics-json",
+        type=str,
+        default=None,
+        help="Path to write the overall test accuracy (percent) as JSON",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument(
         "--center-crop-size",
@@ -274,6 +280,10 @@ def main() -> None:
     logger.info(f"Results saved to {output_csv}")
 
     print_summary(df)
+
+    if args.metrics_json:
+        with open(args.metrics_json, "w") as f:
+            json.dump({"accuracy": df["correct"].mean() * 100}, f)
 
 
 if __name__ == "__main__":
