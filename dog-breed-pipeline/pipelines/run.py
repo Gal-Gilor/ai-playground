@@ -121,7 +121,10 @@ def main() -> None:
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    pipeline = build_data_pipeline(detection_image=built_image("dog-detection"))
+    pipeline = build_data_pipeline(
+        detection_image=built_image("dog-detection"),
+        classifier_image=built_image("dog-breed-classifier"),
+    )
     submit(args.pipeline, compile_pipeline(args.pipeline, pipeline), args.wait)
 
 
