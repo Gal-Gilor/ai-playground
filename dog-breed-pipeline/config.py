@@ -29,7 +29,13 @@ class GeminiConfig(BaseModel):
     passes: int = Field(description="Passes over the crops; later ones retry 429 failures")
 
 
+class SplitConfig(BaseModel):
+    test_size: float = Field(description="Fraction of each breed's crops moved to test/")
+    seed: int = Field(description="Seed for choosing which crops move to test/")
+
+
 class Config(BaseModel):
     vertex_ai: VertexAIConfig
     cloud_storage: CloudStorageConfig
     gemini: GeminiConfig
+    split: SplitConfig

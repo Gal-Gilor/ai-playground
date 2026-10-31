@@ -159,3 +159,37 @@ def filter_visible_dogs(
             str(config.gemini.passes),
         ],
     )
+
+
+@dsl.container_component
+def split_dataset(
+    cropped_images: Input[Dataset],
+    cropped_labels: Input[Dataset],
+    visible_labels: Input[Dataset],
+    dataset: Output[Dataset],
+):
+    """Sort the visible crops into train/<breed>/ and move a share of each breed to test/.
+
+    Args:
+        cropped_images (Input[Dataset]): Folder of cropped JPEG images.
+        cropped_labels (Input[Dataset]): CSV with the id and breed of each crop.
+        visible_labels (Input[Dataset]): CSV with id, breed and is_visible.
+        dataset (Output[Dataset]): Output folder with train/<breed>/ and test/<breed>/.
+    """
+    train_directory = f"{dataset.path}/train"
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=[
+            "sh",
+            "-c",
+            f"python -m scripts.create_train_split"
+            f" --labels-csv {cropped_labels.path}"
+            f" --cropped-images-directory {cropped_images.path}"
+            f" --visible-csv {visible_labels.path}"
+            f" --train-directory {train_directory}"
+            f" && python -m scripts.create_test_split"
+            f" --train-directory {train_directory}"
+            f" --test-size {config.split.test_size}"
+            f" --seed {config.split.seed}",
+        ],
+    )
