@@ -12,7 +12,7 @@ class Envs(BaseSettings):
 
     PATH_TO_CONFIG: str = "config.toml"
     GOOGLE_CLOUD_PROJECT: str = "pooch-perfect"
-    GOOGLE_CLOUD_LOCATION: str = "us-central1"
+    GOOGLE_CLOUD_LOCATION: str = "global"
     GOOGLE_CLOUD_BUCKET: str = "pooch-perfect-public"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

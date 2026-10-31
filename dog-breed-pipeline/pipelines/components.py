@@ -6,6 +6,7 @@ Each component names an untagged image. The pipeline sets the built image on eac
 
 from kfp import dsl
 from kfp.dsl import Dataset
+from kfp.dsl import Input
 from kfp.dsl import Output
 from kfp.dsl import PipelineTask
 
@@ -70,5 +71,25 @@ def detect_dogs(raw_labels_csv: str, raw_images: str, labels: Output[Dataset]):
             labels.path,
             "--checkpoint-path",
             "/tmp/detections.checkpoint.jsonl",
+        ],
+    )
+
+
+@dsl.container_component
+def unpack_bounding_boxes(labels: Input[Dataset], exploded_labels: Output[Dataset]):
+    """Explode the labels to one row per bounding box and assign each row a crop ID.
+
+    Args:
+        labels (Input[Dataset]): Labels CSV from detection, with one row per image.
+        exploded_labels (Output[Dataset]): Output CSV with one row per bounding box.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.unpack_bounding_boxes"],
+        args=[
+            "--source-labels-csv",
+            labels.path,
+            "--exploded-csv",
+            exploded_labels.path,
         ],
     )

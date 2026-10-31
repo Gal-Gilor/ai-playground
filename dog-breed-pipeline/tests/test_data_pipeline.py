@@ -9,7 +9,7 @@ from pipelines.data import build_data_pipeline
 def test_data_pipeline_compiles(tmp_path: Path) -> None:
     """The data pipeline compiles, which catches wiring and type errors before submitting."""
     path = tmp_path / "data.yaml"
-    compiler.Compiler().compile(build_data_pipeline("det:t1"), str(path))
+    compiler.Compiler().compile(build_data_pipeline("det:t1", "cls:t1"), str(path))
     assert path.exists()
 
 
