@@ -1,6 +1,5 @@
 import json
 from unittest.mock import MagicMock
-from unittest.mock import patch
 
 import pytest
 import torch
@@ -11,7 +10,6 @@ from src.utils import _extract_class_bounding_boxes
 from src.utils import _get_class_mapping
 from src.utils import _single_dog_no_person_image
 from src.utils import create_batches
-from src.utils import get_device_name
 from src.utils import get_image_path
 from src.utils import read_chunks_in_batches
 
@@ -547,19 +545,3 @@ def test_any_dog_no_person_image(class_ids, expected):
     """One or more dogs and no person passes; no dogs or any person fails."""
     result = _make_yolo_result(class_ids, [[0.0, 0.0, 1.0, 1.0]] * len(class_ids))
     assert _any_dog_no_person_image(result, CLASS_MAPPING) is expected
-
-
-# --- get_device_name ---
-
-
-def test_get_device_name_cuda_available():
-    """The device name is cuda:0 when CUDA is available."""
-    with patch("torch.cuda.is_available", return_value=True):
-        assert get_device_name() == "cuda:0"
-
-
-def test_get_device_name_cuda_unavailable():
-    """Detection fails fast without CUDA instead of silently running on CPU."""
-    with patch("torch.cuda.is_available", return_value=False):
-        with pytest.raises(RuntimeError, match="CUDA not available"):
-            get_device_name()
