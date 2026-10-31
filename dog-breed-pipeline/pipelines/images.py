@@ -97,8 +97,6 @@ def build_image(project: str) -> str:
             config.vertex_ai.region,
             "--timeout",
             "3600s",
-            "--machine-type",
-            "e2-highcpu-8",
         ],
         check=True,
     )
