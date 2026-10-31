@@ -5,6 +5,7 @@ from kfp.dsl.graph_component import GraphComponent
 
 from pipelines.components import crop_images
 from pipelines.components import detect_dogs
+from pipelines.components import filter_visible_dogs
 from pipelines.components import gcs_to_fuse
 from pipelines.components import unpack_bounding_boxes
 from pipelines.components import use_gpu
@@ -41,5 +42,13 @@ def build_data_pipeline(detection_image: str, classifier_image: str) -> GraphCom
             raw_images=raw_images,
         )
         crop_task.set_container_image(classifier_image)
+
+        filter_task = filter_visible_dogs(
+            cropped_images=crop_task.outputs["cropped_images"],
+            cropped_labels=crop_task.outputs["cropped_labels"],
+        )
+        filter_task.set_container_image(classifier_image)
+        filter_task.set_env_variable("GOOGLE_CLOUD_PROJECT", config.vertex_ai.project)
+        filter_task.set_env_variable("GOOGLE_CLOUD_LOCATION", config.gemini.location)
 
     return data_pipeline
