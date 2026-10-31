@@ -39,11 +39,11 @@ class CropImagesConfig(BaseModel):
     )
     crop_id_column: str = Field(
         default="unique_id",
-        description="Column name for the pre-assigned crop UUID from the exploded labels",
+        description="Column name for the pre-assigned crop ID from the exploded labels",
     )
     output_id_column: str = Field(
         default="id",
-        description="Column name for the crop UUID in the output labels CSV",
+        description="Column name for the crop ID in the output labels CSV",
     )
 
 
@@ -65,6 +65,10 @@ class CreateTestSplitConfig(BaseModel):
     test_size: float = Field(
         default=0.25,
         description="Fraction of each breed's images to move into the test split.",
+    )
+    seed: int = Field(
+        default=42,
+        description="Seed for choosing which images move into the test split.",
     )
 
 
@@ -120,7 +124,7 @@ class FilterVisibleDogsConfig(BaseModel):
         description="CSV with id and breed columns (stage 2 output)"
     )
     output_csv: str = Field(description="Output CSV: id, breed, is_visible")
-    model: str = Field(default="gemini-2.5-flash", description="Gemini model name")
+    model: str = Field(default="gemini-3.5-flash", description="Gemini model name")
     rate_limit: float = Field(
         default=10.0, description="Max requests per second (AsyncLimiter)"
     )

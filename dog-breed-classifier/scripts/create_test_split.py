@@ -7,6 +7,7 @@ Usage (from project root):
 
 import argparse
 import logging
+import random
 import shutil
 from math import floor
 from pathlib import Path
@@ -18,7 +19,9 @@ from settings import config
 logger = logging.getLogger(__name__)
 
 
-def create_test_split(train_directory: Path, test_size: float = 0.25) -> tuple[int, int]:
+def create_test_split(
+    train_directory: Path, test_size: float = 0.25, seed: int = 42
+) -> tuple[int, int]:
     """Move a fraction of each breed's images into a sibling test directory.
 
     Idempotent: counts images already in the test directory so repeated runs converge
@@ -29,6 +32,7 @@ def create_test_split(train_directory: Path, test_size: float = 0.25) -> tuple[i
             images.
         test_size (float): Target fraction of each breed's total images (train + test) to place
             in the test split. Breeds where floor(total * test_size) is zero are skipped.
+        seed (int): Seed for choosing which images move, so the split is reproducible.
 
     Returns:
         A `(moved, skipped)` tuple where `skipped` is the number of breeds with
@@ -43,6 +47,7 @@ def create_test_split(train_directory: Path, test_size: float = 0.25) -> tuple[i
 
     for breed_dir in tqdm(breed_dirs, desc="Processing breeds"):
         train_images = sorted(breed_dir.glob("*.jpg"))
+        random.Random(seed).shuffle(train_images)
         test_breed_dir = test_directory / breed_dir.name
         already_in_test = (
             len(list(test_breed_dir.glob("*.jpg"))) if test_breed_dir.exists() else 0
@@ -50,18 +55,17 @@ def create_test_split(train_directory: Path, test_size: float = 0.25) -> tuple[i
         total = len(train_images) + already_in_test
         target = floor(total * test_size)
         n = max(0, target - already_in_test)
-        if n == 0:
-            if target == 0:
-                logger.warning(
-                    f"Skipping {breed_dir.name}: only {total} image(s), none to move"
-                )
-                skipped += 1
-            continue
-
-        test_breed_dir.mkdir(parents=True, exist_ok=True)
-        for img in train_images[:n]:
-            shutil.move(str(img), test_breed_dir / img.name)
-        moved += n
+        if n > 0:
+            test_breed_dir.mkdir(parents=True, exist_ok=True)
+            for img in train_images[:n]:
+                shutil.move(str(img), test_breed_dir / img.name)
+            moved += n
+        elif target == 0:
+            logger.warning(f"Skipping {breed_dir.name}: only {total} image(s), none to move")
+            skipped += 1
+        logger.info(
+            f"{breed_dir.name}: {len(train_images) - n} train, {already_in_test + n} test"
+        )
 
     logger.info(f"Done. Moved: {moved} images | Breeds skipped: {skipped}")
     return moved, skipped
@@ -85,6 +89,12 @@ def parse_args() -> argparse.Namespace:
         help="Fraction of each breed's images to move to the test split.",
     )
     parser.add_argument(
+        "--seed",
+        type=int,
+        default=cfg_test.seed,
+        help="Seed for choosing which images move to the test split.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -98,7 +108,7 @@ def main() -> None:
         level=args.log_level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    create_test_split(args.train_directory, test_size=args.test_size)
+    create_test_split(args.train_directory, test_size=args.test_size, seed=args.seed)
 
 
 if __name__ == "__main__":

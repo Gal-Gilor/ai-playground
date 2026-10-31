@@ -7,7 +7,6 @@ Usage (from project root):
 
 import argparse
 import logging
-import uuid
 from pathlib import Path
 
 import pandas as pd
@@ -21,18 +20,24 @@ logger = logging.getLogger(__name__)
 def unpack_bounding_boxes(df: pd.DataFrame) -> pd.DataFrame:
     """Explode df to one row per bounding box and prepend a crop_id column.
 
+    Crop IDs are `<source image id>_<box index>`, with the index counting from 0 within each
+    image, so reruns give the same IDs.
+
     Args:
         df (pd.DataFrame): Labels DataFrame with one row per source image and a list of
-            bounding boxes
-            per row.
+            bounding boxes per row.
 
     Returns:
         Exploded DataFrame with one row per bounding box and a new crop_id column prepended.
     """
     bounding_boxes_column = config.training.unpack_bounding_boxes.bounding_boxes_column
     crop_id_column = config.training.crop_images.crop_id_column
+    source_id_column = config.training.crop_images.source_id_column
     df = df.explode(bounding_boxes_column, ignore_index=True)
-    df.insert(0, crop_id_column, [uuid.uuid4().hex for _ in range(len(df))])
+    box_index = df.groupby(source_id_column).cumcount()
+    df.insert(
+        0, crop_id_column, df[source_id_column].astype(str) + "_" + box_index.astype(str)
+    )
     return df
 
 
