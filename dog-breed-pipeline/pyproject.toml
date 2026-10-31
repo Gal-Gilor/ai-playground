@@ -1,0 +1,36 @@
+[project]
+name = "dog-breed-pipeline"
+version = "0.1.0"
+description = "Vertex AI pipelines for the dog breed data and training workflows"
+requires-python = ">=3.12"
+dependencies = [
+    "google-cloud-aiplatform>=2.7.0",
+    "kfp==2.18.0",
+    "pydantic>=2.14.2",
+    "pydantic-settings>=2.16.2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 95
+fix = true
+exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
+docstring-code-format = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]
