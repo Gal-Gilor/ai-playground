@@ -11,17 +11,16 @@ Usage (from project root):
 import argparse
 import asyncio
 import csv
-import functools
 import logging
-import random
+import sys
 from pathlib import Path
 from typing import IO
 
 import pandas as pd
 from aiolimiter import AsyncLimiter
 from google import genai
+from google.genai import errors
 from google.genai import types
-from google.genai.errors import APIError
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
@@ -31,6 +30,8 @@ from settings import config
 from settings import env_variables
 
 logger = logging.getLogger(__name__)
+
+PROGRESS_EVERY = 500
 
 PROMPT = (
     "Is there a clearly discernible dog in this image? "
@@ -43,35 +44,6 @@ class DogVisibilityResponse(BaseModel):
     is_visible: bool
 
 
-def retry_async(max_retries: int = 5, initial_delay: float = 1.0, backoff_factor: float = 2.0):
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            delay = initial_delay
-            for attempt in range(1, max_retries + 1):
-                try:
-                    return await func(*args, **kwargs)
-                except APIError as e:
-                    if e.code in (429, 500, 503) and attempt < max_retries:
-                        jitter = delay * (0.5 + random.random() * 0.5)
-                        logger.warning(
-                            "Attempt %d/%d (status %d), retry in %.2fs",
-                            attempt,
-                            max_retries,
-                            e.code,
-                            jitter,
-                        )
-                        await asyncio.sleep(jitter)
-                        delay *= backoff_factor
-                    else:
-                        raise
-
-        return wrapper
-
-    return decorator
-
-
-@retry_async()
 async def classify_image(
     client: genai.Client,
     image_id: str,
@@ -93,8 +65,8 @@ async def classify_image(
     Returns:
         Dict with keys `id`, `breed`, and `is_visible`.
     """
-    image_bytes = image_path.read_bytes()
     async with limiter:
+        image_bytes = await asyncio.to_thread(image_path.read_bytes)
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
         response = await client.aio.models.generate_content(
             model=model,
@@ -108,15 +80,15 @@ async def classify_image(
     return {"id": image_id, "breed": breed, "is_visible": result.is_visible}
 
 
-async def _run_all(
+async def _run_pass(
     client: genai.Client,
     pending: list[tuple[str, str, Path]],
     limiter: AsyncLimiter,
     cfg: FilterVisibleDogsConfig,
     writer: csv.DictWriter,
     f: IO[str],
-) -> int:
-    """Dispatch all pending classification tasks concurrently, writing each row on completion.
+) -> tuple[int, list[tuple[str, str, Path]]]:
+    """Classify the pending crops concurrently, writing each row on completion.
 
     Args:
         client (genai.Client): Authenticated Gemini client.
@@ -128,25 +100,63 @@ async def _run_all(
         f (IO[str]): Open file handle; flushed after every row.
 
     Returns:
-        Count of successfully classified images.
+        Count of classified crops, and the crops that failed with a 429 error.
     """
-    tasks = [
-        classify_image(client, image_id, breed, image_path, limiter, cfg.model)
-        for image_id, breed, image_path in pending
-    ]
+    tasks = {
+        asyncio.create_task(classify_image(client, *crop, limiter, cfg.model)): crop
+        for crop in pending
+    }
+    total = len(tasks)
+    interactive = sys.stderr.isatty()
     count = 0
-    with tqdm(total=len(tasks), unit="img") as progress:
-        for coro in asyncio.as_completed(tasks):
-            try:
-                result = await coro
-                writer.writerow(result)
-                f.flush()
-                count += 1
-            except Exception:
-                logger.exception("Failed to classify an image; skipping")
-            finally:
+    processed = 0
+    rate_limited = []
+    remaining = set(tasks)
+    with tqdm(total=total, unit="img", disable=not interactive) as progress:
+        while remaining:
+            done, remaining = await asyncio.wait(
+                remaining, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in done:
+                crop = tasks[task]
+                error = task.exception()
+                if error is None:
+                    writer.writerow(task.result())
+                    f.flush()
+                    count += 1
+                elif isinstance(error, errors.ClientError) and error.code == 429:
+                    logger.warning("Rate limited on %s", crop[0])
+                    rate_limited.append(crop)
+                else:
+                    logger.error("Failed to classify %s: %s", crop[0], error)
+                processed += 1
                 progress.update(1)
-    return count
+                if not interactive and (processed % PROGRESS_EVERY == 0 or processed == total):
+                    logger.info("Processed %d/%d images", processed, total)
+    return count, rate_limited
+
+
+async def _run_passes(
+    client: genai.Client,
+    pending: list[tuple[str, str, Path]],
+    cfg: FilterVisibleDogsConfig,
+    writer: csv.DictWriter,
+    f: IO[str],
+) -> tuple[int, list[tuple[str, str, Path]]]:
+    """Run up to `cfg.passes` passes, each retrying only the crops that got 429 errors.
+
+    Returns:
+        Count of classified crops, and the crops still rate limited after the last pass.
+    """
+    limiter = AsyncLimiter(max_rate=cfg.rate_limit, time_period=60.0)
+    classified = 0
+    for attempt in range(1, cfg.passes + 1):
+        logger.info("Pass %d of %d: %d images", attempt, cfg.passes, len(pending))
+        count, pending = await _run_pass(client, pending, limiter, cfg, writer, f)
+        classified += count
+        if not pending:
+            break
+    return classified, pending
 
 
 def parse_args() -> argparse.Namespace:
@@ -189,7 +199,13 @@ def parse_args() -> argparse.Namespace:
         "--max-retries",
         type=int,
         default=cfg.max_retries if cfg else 5,
-        help="Retry attempts on transient API errors",
+        help="Attempts per request, including the first, on transient API errors",
+    )
+    parser.add_argument(
+        "--passes",
+        type=int,
+        default=cfg.passes if cfg else 2,
+        help="Passes over the crops; later passes retry only 429 failures",
     )
     parser.add_argument(
         "--log-level",
@@ -208,7 +224,7 @@ def main() -> None:
         level=args.log_level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    logging.getLogger("google_genai.models").setLevel(logging.WARNING)
+    logging.getLogger("google_genai").setLevel(logging.WARNING)
 
     cfg = FilterVisibleDogsConfig(
         cropped_images_directory=str(args.cropped_images_directory),
@@ -217,6 +233,7 @@ def main() -> None:
         model=args.model,
         rate_limit=args.rate_limit,
         max_retries=args.max_retries,
+        passes=args.passes,
     )
 
     labels = pd.read_csv(cfg.cropped_image_labels_csv)
@@ -241,9 +258,10 @@ def main() -> None:
         vertexai=True,
         project=env_variables.GOOGLE_CLOUD_PROJECT,
         location=env_variables.GOOGLE_CLOUD_LOCATION,
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(attempts=cfg.max_retries)
+        ),
     )
-    limiter = AsyncLimiter(max_rate=cfg.rate_limit, time_period=60.0)
-
     write_header = not output_path.exists()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -251,7 +269,7 @@ def main() -> None:
         writer = csv.DictWriter(f, fieldnames=["id", "breed", "is_visible"])
         if write_header:
             writer.writeheader()
-        count = asyncio.run(_run_all(client, pending, limiter, cfg, writer, f))
+        count, rate_limited = asyncio.run(_run_passes(client, pending, cfg, writer, f))
 
     logger.info(
         "Classified %d new images; total in %s: %d",
@@ -259,6 +277,15 @@ def main() -> None:
         output_path,
         len(done_ids) + count,
     )
+    failed = len(pending) - count
+    if failed:
+        logger.warning(
+            "%d images were not classified (%d still rate limited after %d passes): %s",
+            failed,
+            len(rate_limited),
+            cfg.passes,
+            [image_id for image_id, _, _ in rate_limited],
+        )
 
 
 if __name__ == "__main__":
