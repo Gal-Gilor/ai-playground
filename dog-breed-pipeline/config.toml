@@ -5,6 +5,8 @@ service_account = "dog-breed-pipeline@pooch-perfect.iam.gserviceaccount.com"
 artifact_registry = "us-central1-docker.pkg.dev/pooch-perfect/dog-breed-pipeline"
 accelerator_type = "NVIDIA_TESLA_T4"
 accelerator_count = 1
+# Must differ from every pipeline name: both share one Vertex ML Metadata ID space.
+experiment = "dog-breed-tuning"
 
 [cloud_storage]
 location = "us-central1"
@@ -23,3 +25,12 @@ passes = 2
 [split]
 test_size = 0.2
 seed = 42
+
+[training_parameters]
+head_epochs = 15
+head_batch_size = 32
+head_learning_rate = 1e-3
+head_weight_decay = 1e-4
+head_hidden_units = 512
+head_dropout_rate = 0.3
+head_early_stopping_patience = 5

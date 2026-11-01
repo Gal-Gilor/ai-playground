@@ -5,8 +5,11 @@ Each component names an untagged image. The pipeline sets the built image on eac
 """
 
 from kfp import dsl
+from kfp.dsl import Artifact
 from kfp.dsl import Dataset
 from kfp.dsl import Input
+from kfp.dsl import Metrics
+from kfp.dsl import Model
 from kfp.dsl import Output
 from kfp.dsl import PipelineTask
 
@@ -193,3 +196,71 @@ def split_dataset(
             f" --seed {config.split.seed}",
         ],
     )
+
+
+@dsl.container_component
+def train_head(
+    dataset: Input[Dataset],
+    epochs: int,
+    batch_size: int,
+    learning_rate: float,
+    weight_decay: float,
+    hidden_units: int,
+    dropout_rate: float,
+    early_stopping_patience: int,
+    model: Output[Model],
+):
+    """Train the classification head on a frozen EfficientNet-B4 backbone.
+
+    Args:
+        dataset (Input[Dataset]): Folder with train/<breed>/ images.
+        epochs (int): Maximum number of epochs.
+        batch_size (int): Training batch size.
+        learning_rate (float): Adam learning rate.
+        weight_decay (float): Adam weight decay.
+        hidden_units (int): Units in the head's hidden layer.
+        dropout_rate (float): Dropout rate after the head's hidden layer.
+        early_stopping_patience (int): Epochs without validation improvement before stopping.
+        model (Output[Model]): Output run folder with the checkpoints, curves, params.yaml
+            and metrics.json.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.train_classification_head"],
+        args=[
+            "--train-directory",
+            f"{dataset.path}/train",
+            "--run-directory",
+            model.path,
+            "--epochs",
+            epochs,
+            "--batch-size",
+            batch_size,
+            "--learning-rate",
+            learning_rate,
+            "--weight-decay",
+            weight_decay,
+            "--head-hidden-units",
+            hidden_units,
+            "--head-dropout-rate",
+            dropout_rate,
+            "--early-stopping-patience",
+            early_stopping_patience,
+        ],
+    )
+
+
+@dsl.component(base_image="python:3.12-slim")
+def log_metrics(run: Input[Artifact], prefix: str, metrics: Output[Metrics]) -> None:
+    """Log the entries of a run's metrics.json as metrics, named `<prefix>_<name>`.
+
+    Args:
+        run (Input[Artifact]): Run folder that holds metrics.json.
+        prefix (str): Prefix that keeps metric names from different steps distinct.
+        metrics (Output[Metrics]): Output metrics artifact.
+    """
+    import json
+    from pathlib import Path
+
+    for name, value in json.loads((Path(run.path) / "metrics.json").read_text()).items():
+        metrics.log_metric(f"{prefix}_{name}", value)

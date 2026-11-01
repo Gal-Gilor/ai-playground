@@ -11,6 +11,7 @@ class VertexAIConfig(BaseModel):
     )
     accelerator_type: str = Field(description="GPU type for GPU steps")
     accelerator_count: int = Field(description="Number of GPUs for GPU steps")
+    experiment: str = Field(description="Vertex AI experiment that records training runs")
 
 
 class CloudStorageConfig(BaseModel):
@@ -34,8 +35,21 @@ class SplitConfig(BaseModel):
     seed: int = Field(description="Seed for choosing which crops move to test/")
 
 
+class TrainingParametersConfig(BaseModel):
+    head_epochs: int = Field(description="Maximum epochs for head training")
+    head_batch_size: int = Field(description="Batch size for head training")
+    head_learning_rate: float = Field(description="Adam learning rate for head training")
+    head_weight_decay: float = Field(description="Adam weight decay for head training")
+    head_hidden_units: int = Field(description="Units in the head's hidden layer")
+    head_dropout_rate: float = Field(description="Dropout rate after the head's hidden layer")
+    head_early_stopping_patience: int = Field(
+        description="Epochs without validation improvement before head training stops"
+    )
+
+
 class Config(BaseModel):
     vertex_ai: VertexAIConfig
     cloud_storage: CloudStorageConfig
     gemini: GeminiConfig
     split: SplitConfig
+    training_parameters: TrainingParametersConfig

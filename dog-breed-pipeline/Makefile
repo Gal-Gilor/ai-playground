@@ -1,4 +1,4 @@
-.PHONY: build-detection build-classifier run-data test lint
+.PHONY: build-detection build-classifier run-data run-training test lint
 
 RUN_FLAGS = $(if $(WAIT),--wait)
 
@@ -10,6 +10,9 @@ build-classifier:
 
 run-data:
 	uv run python -m pipelines.run data $(RUN_FLAGS)
+
+run-training:
+	uv run python -m pipelines.run training --dataset-uri $(DATASET_URI) $(foreach p,$(PARAMS),--param $(p)) $(RUN_FLAGS)
 
 test:
 	uv run pytest -v
