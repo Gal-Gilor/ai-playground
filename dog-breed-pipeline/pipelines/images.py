@@ -65,7 +65,11 @@ def image_tag(project: str) -> str:
 
 
 def _load_image_tags() -> dict[str, str]:
-    """Load the recorded image URIs, keyed by project folder name."""
+    """Load the recorded image URIs, keyed by project folder name.
+
+    Returns:
+        dict[str, str]: Image URIs by project folder name; empty if none are recorded yet.
+    """
     if not IMAGE_TAGS_PATH.exists():
         return {}
     return json.loads(IMAGE_TAGS_PATH.read_text())
@@ -128,7 +132,11 @@ def built_image(project: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(description="Build a project image with Cloud Build.")
     parser.add_argument(
         "project", choices=sorted(MAKE_TARGETS), help="Project folder to build"
