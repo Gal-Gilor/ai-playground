@@ -1,0 +1,30 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ruff:
+    name: ruff (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [dog-breed-classifier, dog-breed-pipeline, dog-detection]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      # Installs only the dev group: ruff at the version pinned in the project's uv.lock,
+      # without the heavy runtime dependencies such as torch.
+      - run: uv sync --frozen --only-dev
+      # pyproject.toml sets `fix = true`, so --no-fix makes fixable issues fail the check.
+      - run: uv run --no-sync ruff check --no-fix .
+      - run: uv run --no-sync ruff format --check .
