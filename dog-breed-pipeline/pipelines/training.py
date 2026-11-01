@@ -32,6 +32,19 @@ def build_training_pipeline(classifier_image: str) -> GraphComponent:
         head_dropout_rate: float = DEFAULTS.head_dropout_rate,
         head_early_stopping_patience: int = DEFAULTS.head_early_stopping_patience,
     ) -> None:
+        """Train the classification head on a dataset and log its metrics.
+
+        Args:
+            dataset_uri (str): gs:// URI of the dataset folder with train/<breed>/ images.
+            head_epochs (int): Maximum epochs for head training.
+            head_batch_size (int): Batch size for head training.
+            head_learning_rate (float): Adam learning rate for head training.
+            head_weight_decay (float): Adam weight decay for head training.
+            head_hidden_units (int): Units in the head's hidden layer.
+            head_dropout_rate (float): Dropout rate after the head's hidden layer.
+            head_early_stopping_patience (int): Epochs without validation improvement before
+                head training stops.
+        """
         dataset = dsl.importer(
             artifact_uri=dataset_uri, artifact_class=dsl.Dataset, reimport=False
         )

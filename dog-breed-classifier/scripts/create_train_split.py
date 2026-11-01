@@ -27,7 +27,7 @@ def _copy_file(src_dst: tuple[str, str]) -> str | None:
         src_dst (tuple[str, str]): A `(src, dst)` pair of path strings.
 
     Returns:
-        The source path string if the source file is missing, otherwise `None`.
+        str | None: The source path string if the source file is missing, otherwise `None`.
     """
     src, dst = src_dst
     if not Path(src).exists():
@@ -60,7 +60,8 @@ def create_train_split(
             flag.
 
     Returns:
-        A `(copied, skipped)` tuple where `skipped` is the count of missing source images.
+        tuple[int, int]: A `(copied, skipped)` tuple where `skipped` is the count of missing
+            source images.
     """
     df = pd.read_csv(labels_csv)
 
@@ -100,7 +101,11 @@ def create_train_split(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments, defaulting to values from config."""
+    """Parse command-line arguments, defaulting to values from config.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     cfg = config.training.create_train_split
     cfg_crop = config.training.crop_images
     parser = argparse.ArgumentParser(

@@ -53,7 +53,9 @@ def use_gpu(
 
 
 @dsl.container_component
-def detect_dogs(raw_labels_csv: str, raw_images: str, labels: Output[Dataset]):
+def detect_dogs(
+    raw_labels_csv: str, raw_images: str, labels: Output[Dataset]
+) -> dsl.ContainerSpec:
     """Detect dogs with YOLO and write the labels CSV with bounding boxes.
 
     Args:
@@ -61,6 +63,9 @@ def detect_dogs(raw_labels_csv: str, raw_images: str, labels: Output[Dataset]):
         raw_images (str): Mounted path to the folder of raw JPEG images.
         labels (Output[Dataset]): Output labels CSV with single_dog, multiple_dogs and
             dog_bounding_boxes.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     return dsl.ContainerSpec(
         image="dog-detection",
@@ -79,12 +84,17 @@ def detect_dogs(raw_labels_csv: str, raw_images: str, labels: Output[Dataset]):
 
 
 @dsl.container_component
-def unpack_bounding_boxes(labels: Input[Dataset], exploded_labels: Output[Dataset]):
+def unpack_bounding_boxes(
+    labels: Input[Dataset], exploded_labels: Output[Dataset]
+) -> dsl.ContainerSpec:
     """Explode the labels to one row per bounding box and assign each row a crop ID.
 
     Args:
         labels (Input[Dataset]): Labels CSV from detection, with one row per image.
         exploded_labels (Output[Dataset]): Output CSV with one row per bounding box.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     return dsl.ContainerSpec(
         image="dog-breed-classifier",
@@ -104,7 +114,7 @@ def crop_images(
     raw_images: str,
     cropped_images: Output[Dataset],
     cropped_labels: Output[Dataset],
-):
+) -> dsl.ContainerSpec:
     """Crop each bounding box from its raw image and resize it.
 
     Args:
@@ -112,6 +122,9 @@ def crop_images(
         raw_images (str): Mounted path to the folder of raw JPEG images.
         cropped_images (Output[Dataset]): Output folder of cropped JPEG images.
         cropped_labels (Output[Dataset]): Output CSV with the id and breed of each crop.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     return dsl.ContainerSpec(
         image="dog-breed-classifier",
@@ -134,13 +147,16 @@ def filter_visible_dogs(
     cropped_images: Input[Dataset],
     cropped_labels: Input[Dataset],
     visible_labels: Output[Dataset],
-):
+) -> dsl.ContainerSpec:
     """Ask Gemini whether each crop shows a clearly visible dog.
 
     Args:
         cropped_images (Input[Dataset]): Folder of cropped JPEG images.
         cropped_labels (Input[Dataset]): CSV with the id and breed of each crop.
         visible_labels (Output[Dataset]): Output CSV with id, breed and is_visible.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     return dsl.ContainerSpec(
         image="dog-breed-classifier",
@@ -170,7 +186,7 @@ def split_dataset(
     cropped_labels: Input[Dataset],
     visible_labels: Input[Dataset],
     dataset: Output[Dataset],
-):
+) -> dsl.ContainerSpec:
     """Sort the visible crops into train/<breed>/ and move a share of each breed to test/.
 
     Args:
@@ -178,6 +194,9 @@ def split_dataset(
         cropped_labels (Input[Dataset]): CSV with the id and breed of each crop.
         visible_labels (Input[Dataset]): CSV with id, breed and is_visible.
         dataset (Output[Dataset]): Output folder with train/<breed>/ and test/<breed>/.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     train_directory = f"{dataset.path}/train"
     return dsl.ContainerSpec(
@@ -209,7 +228,7 @@ def train_head(
     dropout_rate: float,
     early_stopping_patience: int,
     model: Output[Model],
-):
+) -> dsl.ContainerSpec:
     """Train the classification head on a frozen EfficientNet-B4 backbone.
 
     Args:
@@ -223,6 +242,9 @@ def train_head(
         early_stopping_patience (int): Epochs without validation improvement before stopping.
         model (Output[Model]): Output run folder with the checkpoints, curves, params.yaml
             and metrics.json.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
     """
     return dsl.ContainerSpec(
         image="dog-breed-classifier",

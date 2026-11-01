@@ -1,3 +1,5 @@
+"""Helpers for device selection, image paths, YOLO detections and batching."""
+
 from __future__ import annotations
 
 import itertools
@@ -136,8 +138,8 @@ def create_batches(iterable: Iterable[T], batch_size: int = 20) -> Iterator[tupl
         iterable (Iterable[T]): The iterable to batch.
         batch_size (int): Size of each batch. Must be >= 1. Defaults to 20.
 
-    Returns:
-        Iterator yielding tuples of items from the iterable.
+    Yields:
+        tuple[T, ...]: Successive batches of up to batch_size items.
 
     Raises:
         ValueError: If batch_size is less than 1.
@@ -191,8 +193,8 @@ async def read_chunks_in_batches(
             and skip invalid lines. Defaults to False.
 
     Yields:
-        Lists of chunk dictionaries with keys: section_header, section_text,
-        header_level, metadata.
+        list[dict[str, Any]]: Batches of chunk dictionaries with keys: section_header,
+            section_text, header_level, metadata.
 
     Raises:
         FileNotFoundError: If the specified file does not exist.

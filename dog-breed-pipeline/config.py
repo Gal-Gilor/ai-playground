@@ -1,8 +1,12 @@
+"""Pydantic models that validate the pipeline `config.toml`."""
+
 from pydantic import BaseModel
 from pydantic import Field
 
 
 class VertexAIConfig(BaseModel):
+    """Settings from the `[vertex_ai]` section."""
+
     project: str = Field(description="Google Cloud project that runs the pipelines")
     region: str = Field(description="Region for Vertex AI Pipelines and Cloud Build")
     service_account: str = Field(description="Service account the pipeline runs as")
@@ -15,6 +19,8 @@ class VertexAIConfig(BaseModel):
 
 
 class CloudStorageConfig(BaseModel):
+    """Settings from the `[cloud_storage]` section."""
+
     location: str = Field(description="Location of the private bucket")
     private_bucket: str = Field(description="Bucket for pipeline outputs")
     pipeline_root: str = Field(description="gs:// root where KFP stores step artifacts")
@@ -23,6 +29,8 @@ class CloudStorageConfig(BaseModel):
 
 
 class GeminiConfig(BaseModel):
+    """Settings from the `[gemini]` section."""
+
     model: str = Field(description="Gemini model name for the visibility filter")
     location: str = Field(description="Gemini API location")
     rate_limit: float = Field(description="Max Gemini requests per minute")
@@ -31,11 +39,15 @@ class GeminiConfig(BaseModel):
 
 
 class SplitConfig(BaseModel):
+    """Settings from the `[split]` section."""
+
     test_size: float = Field(description="Fraction of each breed's crops moved to test/")
     seed: int = Field(description="Seed for choosing which crops move to test/")
 
 
 class TrainingParametersConfig(BaseModel):
+    """Settings from the `[training_parameters]` section."""
+
     head_epochs: int = Field(description="Maximum epochs for head training")
     head_batch_size: int = Field(description="Batch size for head training")
     head_learning_rate: float = Field(description="Adam learning rate for head training")
@@ -48,6 +60,8 @@ class TrainingParametersConfig(BaseModel):
 
 
 class Config(BaseModel):
+    """Root model for the whole `config.toml` file."""
+
     vertex_ai: VertexAIConfig
     cloud_storage: CloudStorageConfig
     gemini: GeminiConfig

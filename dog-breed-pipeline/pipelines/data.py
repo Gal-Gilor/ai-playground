@@ -26,6 +26,10 @@ def build_data_pipeline(detection_image: str, classifier_image: str) -> GraphCom
 
     @dsl.pipeline(name="dog-breed-data")
     def data_pipeline() -> None:
+        """Detect dogs in the raw images, crop and filter them, and split them into train/test.
+
+        Takes no parameters; the inputs come from the `[cloud_storage]` config section.
+        """
         raw_images = gcs_to_fuse(config.cloud_storage.raw_images)
         detect_task = detect_dogs(
             raw_labels_csv=gcs_to_fuse(config.cloud_storage.raw_labels_csv),

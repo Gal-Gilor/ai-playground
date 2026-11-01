@@ -1,3 +1,5 @@
+"""Environment settings, the YAML config and the YOLO model loader."""
+
 from functools import lru_cache
 from pathlib import Path
 

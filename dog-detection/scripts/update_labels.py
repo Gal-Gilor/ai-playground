@@ -1,3 +1,5 @@
+"""Detect dogs in images with YOLO and add the results to the labels CSV."""
+
 import argparse
 import json
 import sys
@@ -172,7 +174,11 @@ def update_labels(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Detect dogs in images with YOLO and add the results to the labels CSV."
     )

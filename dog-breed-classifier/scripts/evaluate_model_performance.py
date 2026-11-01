@@ -45,7 +45,8 @@ def load_model(
         device (torch.device): Device to load the model onto.
 
     Returns:
-        A `(model, classes)` tuple where `classes` is the ordered list of breed names.
+        tuple[nn.Module, list[str]]: A `(model, classes)` tuple where `classes` is the ordered
+            list of breed names.
     """
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     classes: list[str] = checkpoint["classes"]
@@ -84,7 +85,7 @@ def get_transforms(
         normalize_std (list[float]): Per-channel normalization std (ImageNet default).
 
     Returns:
-        A composed torchvision transform.
+        transforms.Compose: The composed torchvision transform.
     """
     return transforms.Compose(
         [
@@ -111,8 +112,8 @@ def run_inference(
         device (torch.device): Device the model is on.
 
     Returns:
-        DataFrame with columns: image_path, true_label, predicted_label, confidence,
-        correct, top5_predictions.
+        pd.DataFrame: One row per image with columns: image_path, true_label, predicted_label,
+            confidence, correct, top5_predictions.
     """
     dataset: ImageFolder = dataloader.dataset  # type: ignore[assignment]
     image_paths = [path for path, _ in dataset.imgs]
@@ -176,6 +177,11 @@ def print_summary(df: pd.DataFrame) -> None:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments, using `config.toml` values as defaults.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     head_cfg = config.training.train_classification_head
     default_test_dir = Path(head_cfg.train_directory).parent / "test"
 
@@ -242,6 +248,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Evaluate a checkpoint on the test directory, save per-image results and print accuracy.
+
+    Raises:
+        ValueError: If the test directory classes do not match the checkpoint classes.
+    """
     args = parse_args()
     logging.basicConfig(
         level=args.log_level,

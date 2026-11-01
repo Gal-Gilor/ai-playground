@@ -28,7 +28,8 @@ def unpack_bounding_boxes(df: pd.DataFrame) -> pd.DataFrame:
             bounding boxes per row.
 
     Returns:
-        Exploded DataFrame with one row per bounding box and a new crop_id column prepended.
+        pd.DataFrame: Exploded DataFrame with one row per bounding box and a new crop_id column
+            prepended.
     """
     bounding_boxes_column = config.training.unpack_bounding_boxes.bounding_boxes_column
     crop_id_column = config.training.crop_images.crop_id_column
@@ -42,7 +43,11 @@ def unpack_bounding_boxes(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(description="Unpack bounding boxes to one row per bbox.")
     parser.add_argument(
         "--source-labels-csv",

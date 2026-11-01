@@ -143,7 +143,11 @@ def submit(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Compile a pipeline and submit it to Vertex AI Pipelines."
     )

@@ -1,3 +1,5 @@
+"""Loads environment settings and the parsed `config.toml` for the pipeline."""
+
 import tomllib
 from pathlib import Path
 

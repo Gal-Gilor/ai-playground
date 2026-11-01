@@ -48,8 +48,8 @@ def build_model(
         num_unfrozen_blocks (int): Number of trailing `model.features` blocks to unfreeze.
 
     Returns:
-        A `(model, classes)` tuple where `classes` is the ordered list of breed names
-        stored in the checkpoint.
+        tuple[nn.Module, list[str]]: A `(model, classes)` tuple where `classes` is the ordered
+            list of breed names stored in the checkpoint.
     """
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     classes: list[str] = checkpoint["classes"]
@@ -88,7 +88,11 @@ def build_model(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments, defaulting to values from config."""
+    """Parse command-line arguments, defaulting to values from config.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     cfg = config.training.finetune_backbone
     parser = argparse.ArgumentParser(
         description="Fine-tune EfficientNet-B4 backbone on the dog breed dataset."

@@ -1,3 +1,5 @@
+"""Async Google Cloud Storage helpers for authenticated and public buckets."""
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -16,8 +18,8 @@ async def extract_file_path_from_gsutil_url(url_or_path: str) -> str:
         url_or_path (str): A gsutil URL (gs://bucket/path/to/file) or file path.
 
     Returns:
-        The file path portion (without bucket) or the original input if not
-        a gs:// URL.
+        str: The file path portion (without bucket) or the original input if not
+            a gs:// URL.
 
     Examples:
         >>> extract_file_path_from_gsutil_url("gs://my-bucket/folder/file.txt")
@@ -71,7 +73,7 @@ class AsyncStorageBucket:
     Provides async functionality for Google Cloud Storage bucket operations.
     """
 
-    def __init__(self, client: Storage, name: str):
+    def __init__(self, client: Storage, name: str) -> None:
         """Initialize the async storage bucket.
 
         Args:
