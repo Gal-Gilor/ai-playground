@@ -1,12 +1,18 @@
+"""Pydantic models that validate `config.toml` for the dog breed classifier."""
+
 from pydantic import BaseModel
 from pydantic import Field
 
 
 class AppConfig(BaseModel):
+    """Settings from the `[app]` section."""
+
     model_weights: str = Field(description="Path to the .pth checkpoint used for inference")
 
 
 class UnpackBoundingBoxesConfig(BaseModel):
+    """Settings from the `[training.unpack_bounding_boxes]` section."""
+
     source_labels_csv: str = Field(
         description="CSV mapping image IDs to breeds and bounding boxes"
     )
@@ -16,6 +22,8 @@ class UnpackBoundingBoxesConfig(BaseModel):
 
 
 class CropImagesConfig(BaseModel):
+    """Settings from the `[training.crop_images]` section."""
+
     raw_images_directory: str = Field(
         description="Directory containing raw source JPEG images"
     )
@@ -48,6 +56,8 @@ class CropImagesConfig(BaseModel):
 
 
 class CreateTrainSplitConfig(BaseModel):
+    """Settings from the `[training.create_train_split]` section."""
+
     train_directory: str = Field(
         description="Output root; images are written to {train_directory}/{breed}/{id}.jpg"
     )
@@ -62,6 +72,8 @@ class CreateTrainSplitConfig(BaseModel):
 
 
 class CreateTestSplitConfig(BaseModel):
+    """Settings from the `[training.create_test_split]` section."""
+
     test_size: float = Field(
         default=0.25,
         description="Fraction of each breed's images to move into the test split.",
@@ -73,6 +85,8 @@ class CreateTestSplitConfig(BaseModel):
 
 
 class BaseTrainingConfig(BaseModel):
+    """Hyperparameters and augmentation settings shared by both training stages."""
+
     batch_size: int = 32
     weight_decay: float = 1e-4
     label_smoothing: float = 0.1
@@ -94,6 +108,8 @@ class BaseTrainingConfig(BaseModel):
 
 
 class TrainClassificationHeadConfig(BaseTrainingConfig):
+    """Settings from the `[training.train_classification_head]` section."""
+
     train_directory: str
     output_directory: str
     epochs: int = 10
@@ -104,6 +120,8 @@ class TrainClassificationHeadConfig(BaseTrainingConfig):
 
 
 class FinetuneBackboneConfig(BaseTrainingConfig):
+    """Settings from the `[training.finetune_backbone]` section."""
+
     checkpoint_path: str
     train_directory: str
     output_directory: str
@@ -119,6 +137,8 @@ class FinetuneBackboneConfig(BaseTrainingConfig):
 
 
 class FilterVisibleDogsConfig(BaseModel):
+    """Settings from the `[training.filter_visible_dogs]` section."""
+
     cropped_images_directory: str = Field(description="Directory of 380×380 cropped JPEGs")
     cropped_image_labels_csv: str = Field(
         description="CSV with id and breed columns (stage 2 output)"
@@ -139,6 +159,8 @@ class FilterVisibleDogsConfig(BaseModel):
 
 
 class TrainingConfig(BaseModel):
+    """Settings from the `[training]` section and its subsections."""
+
     exploded_labels_csv: str = Field(
         description="Pipeline handoff CSV: output of unpack_bounding_boxes, input to crop_images"  # noqa: E501
     )
@@ -152,5 +174,7 @@ class TrainingConfig(BaseModel):
 
 
 class Config(BaseModel):
+    """Root model for the whole `config.toml` file."""
+
     app: AppConfig
     training: TrainingConfig

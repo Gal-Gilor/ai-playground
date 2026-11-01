@@ -4,6 +4,7 @@ from scripts.create_test_split import create_test_split
 
 
 def make_train(root: Path) -> Path:
+    """Create a train directory with 10 images for breed_a and 3 for breed_b."""
     train = root / "train"
     for breed, count in {"breed_a": 10, "breed_b": 3}.items():
         (train / breed).mkdir(parents=True)
@@ -13,6 +14,7 @@ def make_train(root: Path) -> Path:
 
 
 def names(directory: Path) -> set[str]:
+    """Return the JPEG file names in a directory."""
     return {p.name for p in directory.glob("*.jpg")}
 
 

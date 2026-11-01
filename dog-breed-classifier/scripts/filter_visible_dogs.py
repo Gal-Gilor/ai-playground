@@ -41,6 +41,8 @@ PROMPT = (
 
 
 class DogVisibilityResponse(BaseModel):
+    """Structured Gemini response saying whether a dog is clearly visible."""
+
     is_visible: bool
 
 
@@ -63,7 +65,7 @@ async def classify_image(
         model (str): Gemini model name.
 
     Returns:
-        Dict with keys `id`, `breed`, and `is_visible`.
+        dict: Dict with keys `id`, `breed`, and `is_visible`.
     """
     async with limiter:
         image_bytes = await asyncio.to_thread(image_path.read_bytes)
@@ -100,7 +102,8 @@ async def _run_pass(
         f (IO[str]): Open file handle; flushed after every row.
 
     Returns:
-        Count of classified crops, and the crops that failed with a 429 error.
+        tuple[int, list[tuple[str, str, Path]]]: Count of classified crops, and the crops
+            that failed with a 429 error. Other failures are logged and dropped.
     """
     tasks = {
         asyncio.create_task(classify_image(client, *crop, limiter, cfg.model)): crop
@@ -145,8 +148,17 @@ async def _run_passes(
 ) -> tuple[int, list[tuple[str, str, Path]]]:
     """Run up to `cfg.passes` passes, each retrying only the crops that got 429 errors.
 
+    Args:
+        client (genai.Client): Authenticated Gemini client.
+        pending (list[tuple[str, str, Path]]): List of (image_id, breed, image_path) tuples to
+            classify.
+        cfg (FilterVisibleDogsConfig): Pipeline configuration.
+        writer (csv.DictWriter): CSV writer to receive each result row immediately.
+        f (IO[str]): Open file handle; flushed after every row.
+
     Returns:
-        Count of classified crops, and the crops still rate limited after the last pass.
+        tuple[int, list[tuple[str, str, Path]]]: Count of classified crops, and the crops
+            still rate limited after the last pass.
     """
     limiter = AsyncLimiter(max_rate=cfg.rate_limit, time_period=60.0)
     classified = 0
@@ -160,7 +172,11 @@ async def _run_passes(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments, using `config.toml` values as defaults.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     cfg = config.training.filter_visible_dogs
 
     parser = argparse.ArgumentParser(

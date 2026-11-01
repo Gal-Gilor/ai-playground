@@ -44,7 +44,7 @@ def build_model(
         head_dropout_rate (float): Dropout rate applied after the intermediate dense layer.
 
     Returns:
-        The modified model.
+        nn.Module: The modified model.
     """
     model = efficientnet_b4(weights=EfficientNet_B4_Weights.DEFAULT)
     for param in model.features.parameters():
@@ -63,7 +63,11 @@ def build_model(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments, defaulting to values from config."""
+    """Parse command-line arguments, defaulting to values from config.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     cfg = config.training.train_classification_head
     parser = argparse.ArgumentParser(
         description="Fine-tune EfficientNet-B4 on the dog breed dataset."

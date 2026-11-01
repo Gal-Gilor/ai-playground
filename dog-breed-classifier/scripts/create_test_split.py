@@ -35,8 +35,8 @@ def create_test_split(
         seed (int): Seed for choosing which images move, so the split is reproducible.
 
     Returns:
-        A `(moved, skipped)` tuple where `skipped` is the number of breeds with
-        too few images to contribute any test examples.
+        tuple[int, int]: A `(moved, skipped)` tuple where `skipped` is the number of breeds
+            with too few images to contribute any test examples.
     """
     test_directory = train_directory.parent / "test"
     test_directory.mkdir(parents=True, exist_ok=True)
@@ -72,6 +72,11 @@ def create_test_split(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments, using `config.toml` values as defaults.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     cfg = config.training.create_train_split
     cfg_test = config.training.create_test_split
     parser = argparse.ArgumentParser(
@@ -103,6 +108,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Split the configured training directory into train and test sets."""
     args = parse_args()
     logging.basicConfig(
         level=args.log_level,

@@ -59,7 +59,8 @@ def get_dataloaders(
         cfg (BaseTrainingConfig): Config with directory paths and transform parameters.
 
     Returns:
-        A `(train_loader, val_loader, classes, class_weights)` tuple.
+        tuple[DataLoader, DataLoader, list[str], torch.Tensor]: A `(train_loader, val_loader,
+            classes, class_weights)` tuple.
     """
     train_transform = transforms.Compose(
         [
@@ -183,10 +184,12 @@ def train(
         optimizer (torch.optim.Optimizer): Optimizer to use for training.
         freeze_bn (bool): If True, keep BatchNorm layers in eval mode during training
             to preserve ImageNet statistics (used during backbone fine-tuning).
+        checkpoint_metadata (dict | None): Extra entries merged into every saved checkpoint,
+            such as the head architecture needed to rebuild the model.
 
     Returns:
-        Dict with best-epoch metrics: best_epoch, best_train_loss, best_train_acc,
-        best_val_loss, best_val_acc.
+        dict[str, float | int]: Best-epoch metrics: best_epoch, best_train_loss,
+            best_train_acc, best_val_loss, best_val_acc.
     """
     model.to(device)
     criterion = nn.CrossEntropyLoss(

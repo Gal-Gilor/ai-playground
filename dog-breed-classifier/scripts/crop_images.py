@@ -44,7 +44,7 @@ class BoundingBox(BaseModel):
             image_height (int): Height of the source image in pixels.
 
         Returns:
-            BoundingBox with coordinates rounded and clamped to [0, image_width/height].
+            BoundingBox: Box with coordinates rounded and clamped to [0, image_width/height].
         """
         x_min = max(0, min(round(raw[0]), image_width))
         y_min = max(0, min(round(raw[1]), image_height))
@@ -54,7 +54,11 @@ class BoundingBox(BaseModel):
 
     @property
     def is_valid(self) -> bool:
-        """Return True if the box has positive area."""
+        """Return whether the box has positive area.
+
+        Returns:
+            bool: True if the box has positive area.
+        """
         return self.x_max > self.x_min and self.y_max > self.y_min
 
 
@@ -66,7 +70,7 @@ def crop_image(image: Image.Image, bounding_box: BoundingBox) -> Image.Image:
         bounding_box (BoundingBox): Pixel coordinates of the crop region.
 
     Returns:
-        A new Image containing only the cropped region.
+        Image.Image: A new Image containing only the cropped region.
     """
     return image.crop(
         (bounding_box.x_min, bounding_box.y_min, bounding_box.x_max, bounding_box.y_max)
@@ -99,7 +103,7 @@ def process_row(
         output_id_column (str): Column name for the crop UUID in the output records.
 
     Returns:
-        List of dicts with one entry per saved crop.
+        list[dict]: List of dicts with one entry per saved crop.
     """
     source_id: str = row[source_id_column]
     breed: str = row[breed_column]
@@ -159,7 +163,7 @@ def crop_images(
             cropping.
 
     Returns:
-        List of crop records (id, breed).
+        list[dict]: List of crop records (id, breed).
     """
     output_directory.mkdir(parents=True, exist_ok=True)
 
@@ -200,7 +204,11 @@ def crop_images(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse and return command-line arguments."""
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Crop dog images from raw source images using bounding box annotations."
     )

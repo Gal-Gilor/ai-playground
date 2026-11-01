@@ -1,3 +1,5 @@
+"""Helpers for locating images and reading the labels CSV."""
+
 import ast
 import logging
 from collections.abc import Iterable
@@ -17,7 +19,7 @@ def get_image_path(images_dir: Path, image_id: str, extension: str = ".jpg") -> 
         extension (str): File extension including the dot.
 
     Returns:
-        Full path to the image file.
+        Path: Full path to the image file.
     """
     return images_dir / f"{image_id}{extension}"
 
@@ -32,7 +34,7 @@ def load_labels(path: Path, bounding_boxes_column: str = "dog_bounding_boxes") -
         bounding_boxes_column (str): Name of the column containing bounding box data.
 
     Returns:
-        DataFrame with the bounding boxes column parsed into Python lists.
+        pd.DataFrame: DataFrame with the bounding boxes column parsed into Python lists.
     """
     df = pd.read_csv(path)
     df[bounding_boxes_column] = df[bounding_boxes_column].apply(
