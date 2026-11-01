@@ -1,3 +1,5 @@
+"""Download a GCS folder to a local directory, with or without credentials."""
+
 import argparse
 import asyncio
 import logging
@@ -8,6 +10,7 @@ from tqdm.asyncio import tqdm
 
 from src.settings import config
 from src.settings import env_variables
+from src.storage import AsyncStorageBucket
 from src.storage import download_public_blob
 from src.storage import get_storage_bucket
 from src.storage import list_public_blobs
@@ -15,11 +18,16 @@ from src.storage import list_public_blobs
 logger = logging.getLogger(__name__)
 
 
-async def _download_one(bucket, sem, blob_name, dest_path):
+async def _download_one(
+    bucket: AsyncStorageBucket,
+    sem: asyncio.Semaphore,
+    blob_name: str,
+    dest_path: Path,
+) -> None:
     """Download a single blob from GCS under the semaphore concurrency limit.
 
     Args:
-        bucket: AsyncStorageBucket instance to download from.
+        bucket (AsyncStorageBucket): Bucket to download from.
         sem (asyncio.Semaphore): Semaphore that caps concurrent downloads.
         blob_name (str): Blob name (path inside the bucket) to download.
         dest_path (Path): Local path where the file will be written.
@@ -28,11 +36,17 @@ async def _download_one(bucket, sem, blob_name, dest_path):
         await bucket.download_blob(blob_name, str(dest_path))
 
 
-async def _download_one_public(session, bucket_name, sem, blob_name, dest_path):
+async def _download_one_public(
+    session: aiohttp.ClientSession,
+    bucket_name: str,
+    sem: asyncio.Semaphore,
+    blob_name: str,
+    dest_path: Path,
+) -> None:
     """Download a single blob from a public GCS bucket under the semaphore concurrency limit.
 
     Args:
-        session: aiohttp.ClientSession to use for the request.
+        session (aiohttp.ClientSession): Session to use for the request.
         bucket_name (str): Name of the public GCS bucket.
         sem (asyncio.Semaphore): Semaphore that caps concurrent downloads.
         blob_name (str): Blob name (path inside the bucket) to download.
@@ -118,14 +132,16 @@ async def main(
             sem = asyncio.Semaphore(max_concurrent)
 
             await tqdm.gather(
-                *[_download_one(storage_bucket, sem, blob_name, dest) for blob_name, dest in downloads],
+                *[
+                    _download_one(storage_bucket, sem, blob_name, dest)
+                    for blob_name, dest in downloads
+                ],
                 total=len(downloads),
                 unit="file",
             )
 
     print(
-        f"Done. {len(downloads)} files downloaded from "
-        f"gs://{bucket}/{prefix}/ to {out_dir}/"
+        f"Done. {len(downloads)} files downloaded from gs://{bucket}/{prefix}/ to {out_dir}/"
     )
 
 

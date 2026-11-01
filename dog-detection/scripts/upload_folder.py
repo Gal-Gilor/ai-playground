@@ -1,3 +1,5 @@
+"""Upload a local folder to GCS, skipping files that are already present."""
+
 import argparse
 import asyncio
 import logging
@@ -8,16 +10,22 @@ from tqdm.asyncio import tqdm
 
 from src.settings import config
 from src.settings import env_variables
+from src.storage import AsyncStorageBucket
 from src.storage import get_storage_bucket
 
 logger = logging.getLogger(__name__)
 
 
-async def _upload_one(bucket, sem, file_path, destination):
+async def _upload_one(
+    bucket: AsyncStorageBucket,
+    sem: asyncio.Semaphore,
+    file_path: Path,
+    destination: str,
+) -> None:
     """Upload a single file to GCS under the semaphore concurrency limit.
 
     Args:
-        bucket: AsyncStorageBucket instance to upload to.
+        bucket (AsyncStorageBucket): Bucket to upload to.
         sem (asyncio.Semaphore): Semaphore that caps concurrent uploads.
         file_path (Path): Local path of the file to upload.
         destination (str): Blob name (path inside the bucket) for the upload.
