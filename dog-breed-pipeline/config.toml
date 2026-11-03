@@ -34,3 +34,8 @@ head_weight_decay = 1e-4
 head_hidden_units = 512
 head_dropout_rate = 0.3
 head_early_stopping_patience = 5
+
+[data_parameters]
+filter_visible = false
+# Labels from run dog-breed-data-20261031145230.
+visible_labels_uri = "gs://pooch-perfect-private/pipeline-root/796815290830/dog-breed-data-20261031145230/filter-visible-dogs_-7994207423860572160/visible_labels"

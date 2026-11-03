@@ -6,6 +6,7 @@ commit it was submitted from and whether tracked files had uncommitted changes.
 Usage (from project root):
     python -m pipelines.run data
     python -m pipelines.run data --wait
+    python -m pipelines.run data --param filter_visible=true --wait
     python -m pipelines.run training --dataset-uri gs://... --param head_epochs=2 --wait
     python -m pipelines.run --help
 """
@@ -27,6 +28,8 @@ from settings import config
 logger = logging.getLogger(__name__)
 
 BUILD_DIRECTORY = PIPELINE_DIRECTORY / "build"
+# bool("false") is True, so bool overrides are looked up instead of cast.
+BOOLEANS = {"true": True, "false": False}
 
 
 def git_labels() -> dict[str, str]:
@@ -73,17 +76,17 @@ def log_task_outputs(job: aiplatform.PipelineJob) -> None:
 
 
 def parse_overrides(
-    pairs: list[str], defaults: dict[str, int | float]
-) -> dict[str, int | float]:
+    pairs: list[str], defaults: dict[str, int | float | bool | str]
+) -> dict[str, int | float | bool | str]:
     """Turn `name=value` strings into pipeline parameter values of the right type.
 
     Args:
         pairs (list[str]): Strings such as `head_epochs=2`.
-        defaults (dict[str, int | float]): Parameter defaults; each value's type is the type
-            its override is cast to.
+        defaults (dict[str, int | float | bool | str]): Parameter defaults; each value's type
+            is the type its override is cast to. A bool takes `true` or `false` in any case.
 
     Returns:
-        dict[str, int | float]: The typed overrides, by parameter name.
+        dict[str, int | float | bool | str]: The typed overrides, by parameter name.
 
     Raises:
         ValueError: If a pair has no `=`, names a parameter that is not in `defaults`, or
@@ -98,8 +101,8 @@ def parse_overrides(
             raise ValueError(f"Unknown parameter '{name}'; expected one of {sorted(defaults)}")
         expected = type(defaults[name])
         try:
-            overrides[name] = expected(value)
-        except ValueError as error:
+            overrides[name] = BOOLEANS[value.lower()] if expected is bool else expected(value)
+        except (KeyError, ValueError) as error:
             raise ValueError(f"{name} expects {expected.__name__}, got '{value}'") from error
     return overrides
 
@@ -151,28 +154,26 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Compile a pipeline and submit it to Vertex AI Pipelines."
     )
-    subparsers = parser.add_subparsers(dest="pipeline", required=True)
-    data_parser = subparsers.add_parser("data", help="Run the data pipeline")
-    data_parser.add_argument(
-        "--wait",
-        action="store_true",
-        help="Block until the run finishes and log each task's output artifacts",
-    )
-    training_parser = subparsers.add_parser("training", help="Run the training pipeline")
-    training_parser.add_argument(
-        "--dataset-uri", required=True, help="gs:// URI of the dataset the data pipeline made"
-    )
-    training_parser.add_argument(
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
         "--param",
         action="append",
         default=[],
         metavar="NAME=VALUE",
         help="Override a pipeline parameter; repeat for several",
     )
-    training_parser.add_argument(
+    common.add_argument(
         "--wait",
         action="store_true",
         help="Block until the run finishes and log each task's output artifacts",
+    )
+    subparsers = parser.add_subparsers(dest="pipeline", required=True)
+    subparsers.add_parser("data", parents=[common], help="Run the data pipeline")
+    training_parser = subparsers.add_parser(
+        "training", parents=[common], help="Run the training pipeline"
+    )
+    training_parser.add_argument(
+        "--dataset-uri", required=True, help="gs:// URI of the dataset the data pipeline made"
     )
     return parser.parse_args()
 
@@ -186,10 +187,16 @@ def main() -> None:
     )
     classifier_image = built_image("dog-breed-classifier")
     if args.pipeline == "data":
+        overrides = parse_overrides(args.param, config.data_parameters.model_dump())
         pipeline = build_data_pipeline(
             detection_image=built_image("dog-detection"), classifier_image=classifier_image
         )
-        submit(args.pipeline, compile_pipeline(args.pipeline, pipeline), args.wait)
+        submit(
+            args.pipeline,
+            compile_pipeline(args.pipeline, pipeline),
+            args.wait,
+            parameter_values=overrides,
+        )
     else:
         overrides = parse_overrides(args.param, config.training_parameters.model_dump())
         pipeline = build_training_pipeline(classifier_image)

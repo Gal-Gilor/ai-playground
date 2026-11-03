@@ -26,3 +26,12 @@ def test_parse_overrides_rejects_unknown_parameter() -> None:
     """An override that names no known parameter raises an error."""
     with pytest.raises(ValueError, match="head_lr"):
         parse_overrides(["head_lr=0.1"], {"head_learning_rate": 1e-3})
+
+
+def test_parse_overrides_parses_booleans() -> None:
+    """A bool default takes `true` or `false` in any case; `bool("false")` would be True."""
+    defaults = {"filter_visible": True}
+    assert parse_overrides(["filter_visible=False"], defaults) == {"filter_visible": False}
+    assert parse_overrides(["filter_visible=TRUE"], defaults) == {"filter_visible": True}
+    with pytest.raises(ValueError, match="filter_visible"):
+        parse_overrides(["filter_visible=yes"], defaults)

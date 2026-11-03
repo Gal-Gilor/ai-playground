@@ -45,6 +45,15 @@ class SplitConfig(BaseModel):
     seed: int = Field(description="Seed for choosing which crops move to test/")
 
 
+class DataParametersConfig(BaseModel):
+    """Settings from the `[data_parameters]` section."""
+
+    filter_visible: bool = Field(description="Whether to run the Gemini visibility filter")
+    visible_labels_uri: str = Field(
+        description="gs:// URI of the visibility labels to reuse when the filter is skipped"
+    )
+
+
 class TrainingParametersConfig(BaseModel):
     """Settings from the `[training_parameters]` section."""
 
@@ -66,4 +75,5 @@ class Config(BaseModel):
     cloud_storage: CloudStorageConfig
     gemini: GeminiConfig
     split: SplitConfig
+    data_parameters: DataParametersConfig
     training_parameters: TrainingParametersConfig
