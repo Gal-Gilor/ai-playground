@@ -12,6 +12,8 @@ from pipelines.components import unpack_bounding_boxes
 from pipelines.components import use_gpu
 from settings import config
 
+DEFAULTS = config.data_parameters
+
 
 def build_data_pipeline(detection_image: str, classifier_image: str) -> GraphComponent:
     """Build the data pipeline for the given step image.
@@ -25,10 +27,21 @@ def build_data_pipeline(detection_image: str, classifier_image: str) -> GraphCom
     """
 
     @dsl.pipeline(name="dog-breed-data")
-    def data_pipeline() -> None:
-        """Detect dogs in the raw images, crop and filter them, and split them into train/test.
+    def data_pipeline(
+        filter_visible: bool = DEFAULTS.filter_visible,
+        visible_labels_uri: str = DEFAULTS.visible_labels_uri,
+    ) -> None:
+        """Detect dogs in the raw images, crop them, and split them into train/test.
 
-        Takes no parameters; the inputs come from the `[cloud_storage]` config section.
+        The inputs come from the `[cloud_storage]` config section. The Gemini visibility
+        filter is slow and costs money, so it runs only when asked. Otherwise the split
+        reuses labels from an earlier run. If that file does not exist, the split copies
+        every crop.
+
+        Args:
+            filter_visible (bool): Run the Gemini visibility filter on the crops.
+            visible_labels_uri (str): gs:// URI of the visibility labels to reuse when the
+                filter is skipped.
         """
         raw_images = gcs_to_fuse(config.cloud_storage.raw_images)
         detect_task = detect_dogs(
@@ -48,18 +61,25 @@ def build_data_pipeline(detection_image: str, classifier_image: str) -> GraphCom
         )
         crop_task.set_container_image(classifier_image)
 
-        filter_task = filter_visible_dogs(
-            cropped_images=crop_task.outputs["cropped_images"],
-            cropped_labels=crop_task.outputs["cropped_labels"],
-        )
-        filter_task.set_container_image(classifier_image)
-        filter_task.set_env_variable("GOOGLE_CLOUD_PROJECT", config.vertex_ai.project)
-        filter_task.set_env_variable("GOOGLE_CLOUD_LOCATION", config.gemini.location)
+        with dsl.If(filter_visible == True, name="run-gemini-filter"):  # noqa: E712
+            filter_task = filter_visible_dogs(
+                cropped_images=crop_task.outputs["cropped_images"],
+                cropped_labels=crop_task.outputs["cropped_labels"],
+            )
+            filter_task.set_container_image(classifier_image)
+            filter_task.set_env_variable("GOOGLE_CLOUD_PROJECT", config.vertex_ai.project)
+            filter_task.set_env_variable("GOOGLE_CLOUD_LOCATION", config.gemini.location)
+        with dsl.Else(name="reuse-visible-labels"):
+            labels_import = dsl.importer(
+                artifact_uri=visible_labels_uri, artifact_class=dsl.Dataset, reimport=False
+            )
 
         split_task = split_dataset(
             cropped_images=crop_task.outputs["cropped_images"],
             cropped_labels=crop_task.outputs["cropped_labels"],
-            visible_labels=filter_task.outputs["visible_labels"],
+            visible_labels=dsl.OneOf(
+                filter_task.outputs["visible_labels"], labels_import.output
+            ),
         )
         split_task.set_container_image(classifier_image)
 

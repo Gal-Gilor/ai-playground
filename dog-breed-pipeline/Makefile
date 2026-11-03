@@ -9,7 +9,7 @@ build-classifier:
 	uv run python -m pipelines.images dog-breed-classifier
 
 run-data:
-	uv run python -m pipelines.run data $(RUN_FLAGS)
+	uv run python -m pipelines.run data $(foreach p,$(PARAMS),--param $(p)) $(RUN_FLAGS)
 
 run-training:
 	uv run python -m pipelines.run training --dataset-uri $(DATASET_URI) $(foreach p,$(PARAMS),--param $(p)) $(RUN_FLAGS)
