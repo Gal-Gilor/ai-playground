@@ -272,6 +272,65 @@ def train_head(
     )
 
 
+@dsl.container_component
+def finetune_backbone(
+    dataset: Input[Dataset],
+    head_model: Input[Model],
+    epochs: int,
+    batch_size: int,
+    learning_rate: float,
+    momentum: float,
+    weight_decay: float,
+    unfrozen_blocks: int,
+    early_stopping_patience: int,
+    model: Output[Model],
+) -> dsl.ContainerSpec:
+    """Fine-tune the last backbone blocks and the head, starting from the head-trained model.
+
+    Args:
+        dataset (Input[Dataset]): Folder with train/<breed>/ images.
+        head_model (Input[Model]): Run folder from head training, with best.pth.
+        epochs (int): Maximum number of epochs.
+        batch_size (int): Training batch size.
+        learning_rate (float): SGD learning rate; 1e-4 is the maximum.
+        momentum (float): SGD momentum.
+        weight_decay (float): SGD weight decay.
+        unfrozen_blocks (int): Number of trailing backbone blocks to unfreeze.
+        early_stopping_patience (int): Epochs without validation improvement before stopping.
+        model (Output[Model]): Output run folder with the checkpoints, curves, params.yaml
+            and metrics.json.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.finetune_backbone"],
+        args=[
+            "--train-directory",
+            f"{dataset.path}/train",
+            "--checkpoint-path",
+            f"{head_model.path}/best.pth",
+            "--run-directory",
+            model.path,
+            "--epochs",
+            epochs,
+            "--batch-size",
+            batch_size,
+            "--learning-rate",
+            learning_rate,
+            "--momentum",
+            momentum,
+            "--weight-decay",
+            weight_decay,
+            "--num-unfrozen-blocks",
+            unfrozen_blocks,
+            "--early-stopping-patience",
+            early_stopping_patience,
+        ],
+    )
+
+
 @dsl.component(base_image="python:3.12-slim")
 def log_metrics(run: Input[Artifact], prefix: str, metrics: Output[Metrics]) -> None:
     """Log the entries of a run's metrics.json as metrics, named `<prefix>_<name>`.
