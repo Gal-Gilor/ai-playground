@@ -2,9 +2,12 @@ from pathlib import Path
 
 import pytest
 from kfp import compiler
+from pydantic import ValidationError
 
 from pipelines.run import parse_overrides
+from pipelines.run import validated_overrides
 from pipelines.training import build_training_pipeline
+from settings import config
 
 
 def test_training_pipeline_compiles(tmp_path: Path) -> None:
@@ -35,3 +38,9 @@ def test_parse_overrides_parses_booleans() -> None:
     assert parse_overrides(["filter_visible=TRUE"], defaults) == {"filter_visible": True}
     with pytest.raises(ValueError, match="filter_visible"):
         parse_overrides(["filter_visible=yes"], defaults)
+
+
+def test_finetune_learning_rate_above_maximum_is_rejected() -> None:
+    """A fine-tune learning rate above 1e-4 fails before any job is submitted."""
+    with pytest.raises(ValidationError, match="finetune_learning_rate"):
+        validated_overrides(["finetune_learning_rate=1e-3"], config.training_parameters)

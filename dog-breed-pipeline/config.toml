@@ -34,6 +34,13 @@ head_weight_decay = 1e-4
 head_hidden_units = 512
 head_dropout_rate = 0.3
 head_early_stopping_patience = 5
+finetune_epochs = 100
+finetune_batch_size = 16
+finetune_learning_rate = 1e-4
+finetune_momentum = 0.9
+finetune_weight_decay = 1e-4
+finetune_unfrozen_blocks = 2
+finetune_early_stopping_patience = 5
 
 [data_parameters]
 filter_visible = false

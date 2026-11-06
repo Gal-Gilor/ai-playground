@@ -66,6 +66,22 @@ class TrainingParametersConfig(BaseModel):
     head_early_stopping_patience: int = Field(
         description="Epochs without validation improvement before head training stops"
     )
+    finetune_epochs: int = Field(description="Maximum epochs for backbone fine-tuning")
+    finetune_batch_size: int = Field(description="Batch size for backbone fine-tuning")
+    finetune_learning_rate: float = Field(
+        le=1e-4,
+        description="SGD learning rate for backbone fine-tuning; 1e-4 is the maximum",
+    )
+    finetune_momentum: float = Field(description="SGD momentum for backbone fine-tuning")
+    finetune_weight_decay: float = Field(
+        description="SGD weight decay for backbone fine-tuning"
+    )
+    finetune_unfrozen_blocks: int = Field(
+        description="Trailing backbone blocks to unfreeze for fine-tuning"
+    )
+    finetune_early_stopping_patience: int = Field(
+        description="Epochs without validation improvement before fine-tuning stops"
+    )
 
 
 class Config(BaseModel):

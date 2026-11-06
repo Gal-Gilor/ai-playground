@@ -17,6 +17,7 @@ import logging
 from google.cloud import aiplatform
 from kfp import compiler
 from kfp.dsl.graph_component import GraphComponent
+from pydantic import BaseModel
 
 from pipelines.data import build_data_pipeline
 from pipelines.images import PIPELINE_DIRECTORY
@@ -107,6 +108,29 @@ def parse_overrides(
     return overrides
 
 
+def validated_overrides(
+    pairs: list[str], section: BaseModel
+) -> dict[str, int | float | bool | str]:
+    """Parse `name=value` overrides and check the merged values against the section's model.
+
+    Args:
+        pairs (list[str]): Strings such as `head_epochs=2`.
+        section (BaseModel): A config section, such as `config.training_parameters`. Its
+            values are the defaults, and its class holds the limits.
+
+    Returns:
+        dict[str, int | float | bool | str]: The typed overrides, by parameter name.
+
+    Raises:
+        ValueError: If `parse_overrides` rejects a pair.
+        pydantic.ValidationError: If a merged value breaks a limit of the section's model.
+    """
+    defaults = section.model_dump()
+    overrides = parse_overrides(pairs, defaults)
+    type(section).model_validate({**defaults, **overrides})
+    return overrides
+
+
 def submit(
     name: str,
     template_path: str,
@@ -187,7 +211,7 @@ def main() -> None:
     )
     classifier_image = built_image("dog-breed-classifier")
     if args.pipeline == "data":
-        overrides = parse_overrides(args.param, config.data_parameters.model_dump())
+        overrides = validated_overrides(args.param, config.data_parameters)
         pipeline = build_data_pipeline(
             detection_image=built_image("dog-detection"), classifier_image=classifier_image
         )
@@ -198,7 +222,7 @@ def main() -> None:
             parameter_values=overrides,
         )
     else:
-        overrides = parse_overrides(args.param, config.training_parameters.model_dump())
+        overrides = validated_overrides(args.param, config.training_parameters)
         pipeline = build_training_pipeline(classifier_image)
         submit(
             args.pipeline,
