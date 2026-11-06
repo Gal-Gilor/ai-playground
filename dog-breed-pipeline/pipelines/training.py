@@ -3,6 +3,7 @@
 from kfp import dsl
 from kfp.dsl.graph_component import GraphComponent
 
+from pipelines.components import evaluate_model
 from pipelines.components import finetune_backbone
 from pipelines.components import log_metrics
 from pipelines.components import train_head
@@ -40,7 +41,7 @@ def build_training_pipeline(classifier_image: str) -> GraphComponent:
         finetune_unfrozen_blocks: int = DEFAULTS.finetune_unfrozen_blocks,
         finetune_early_stopping_patience: int = DEFAULTS.finetune_early_stopping_patience,
     ) -> None:
-        """Train the classification head, fine-tune the backbone, and log the metrics of both.
+        """Train the head, fine-tune the backbone, and evaluate on the test split.
 
         Args:
             dataset_uri (str): gs:// URI of the dataset folder with train/<breed>/ images.
@@ -94,5 +95,12 @@ def build_training_pipeline(classifier_image: str) -> GraphComponent:
         use_gpu(finetune_task).set_container_image(classifier_image)
 
         log_metrics(run=finetune_task.outputs["model"], prefix="finetune")
+
+        eval_task = evaluate_model(
+            dataset=dataset.output, model=finetune_task.outputs["model"]
+        )
+        use_gpu(eval_task).set_container_image(classifier_image)
+
+        log_metrics(run=eval_task.outputs["evaluation"], prefix="test")
 
     return training_pipeline

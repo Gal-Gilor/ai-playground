@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def build_model(
     checkpoint_path: str | Path,
     num_unfrozen_blocks: int,
-) -> tuple[nn.Module, list[str]]:
+) -> tuple[nn.Module, list[str], dict[str, int | float]]:
     """Load a head-trained checkpoint and prepare the model for backbone fine-tuning.
 
     All parameters are frozen first, then the classifier head and the last
@@ -48,8 +48,10 @@ def build_model(
         num_unfrozen_blocks (int): Number of trailing `model.features` blocks to unfreeze.
 
     Returns:
-        tuple[nn.Module, list[str]]: A `(model, classes)` tuple where `classes` is the ordered
-            list of breed names stored in the checkpoint.
+        tuple[nn.Module, list[str], dict[str, int | float]]: A
+            `(model, classes, head_metadata)` tuple. `classes` is the ordered list of breed
+            names stored in the checkpoint. `head_metadata` holds `head_hidden_units` and
+            `head_dropout_rate`, for the checkpoints written by fine-tuning.
     """
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     classes: list[str] = checkpoint["classes"]
@@ -84,7 +86,11 @@ def build_model(
         f"Unfrozen last {num_unfrozen_blocks} feature block(s). "
         f"Trainable params: {trainable:,} / {total:,}"
     )
-    return model, classes
+    head_metadata = {
+        "head_hidden_units": head_hidden_units,
+        "head_dropout_rate": head_dropout_rate,
+    }
+    return model, classes, head_metadata
 
 
 def parse_args() -> argparse.Namespace:
@@ -250,7 +256,9 @@ def main() -> None:
     logger.info(f"Using device: {device}")
 
     train_loader, val_loader, classes, class_weights = get_dataloaders(cfg)
-    model, checkpoint_classes = build_model(cfg.checkpoint_path, cfg.num_unfrozen_blocks)
+    model, checkpoint_classes, head_metadata = build_model(
+        cfg.checkpoint_path, cfg.num_unfrozen_blocks
+    )
 
     if classes != list(checkpoint_classes):
         raise ValueError(
@@ -275,6 +283,7 @@ def main() -> None:
         classes,
         optimizer,
         freeze_bn=True,
+        checkpoint_metadata=head_metadata,
     )
 
     params = {

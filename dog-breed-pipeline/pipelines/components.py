@@ -331,6 +331,38 @@ def finetune_backbone(
     )
 
 
+@dsl.container_component
+def evaluate_model(
+    dataset: Input[Dataset],
+    model: Input[Model],
+    evaluation: Output[Artifact],
+) -> dsl.ContainerSpec:
+    """Evaluate the fine-tuned model on the test split.
+
+    Args:
+        dataset (Input[Dataset]): Folder with test/<breed>/ images.
+        model (Input[Model]): Run folder from fine-tuning, with best.pth.
+        evaluation (Output[Artifact]): Output folder with predictions.csv and metrics.json.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.evaluate_model_performance"],
+        args=[
+            "--test-directory",
+            f"{dataset.path}/test",
+            "--checkpoint-path",
+            f"{model.path}/best.pth",
+            "--output-csv",
+            f"{evaluation.path}/predictions.csv",
+            "--metrics-json",
+            f"{evaluation.path}/metrics.json",
+        ],
+    )
+
+
 @dsl.component(base_image="python:3.12-slim")
 def log_metrics(run: Input[Artifact], prefix: str, metrics: Output[Metrics]) -> None:
     """Log the entries of a run's metrics.json as metrics, named `<prefix>_<name>`.
