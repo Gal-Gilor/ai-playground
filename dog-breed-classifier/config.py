@@ -130,7 +130,11 @@ class FinetuneBackboneConfig(BaseTrainingConfig):
         description="Number of trailing model.features blocks to unfreeze for fine-tuning",
     )
     epochs: int = 20
-    learning_rate: float = 1e-3
+    learning_rate: float = Field(
+        default=1e-4,
+        le=1e-4,
+        description="SGD learning rate; 1e-3 is too high here, so 1e-4 is the maximum",
+    )
     momentum: float = 0.9
     lr_min_lr: float = 1e-6
     early_stopping_patience: int = 5

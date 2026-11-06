@@ -122,7 +122,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=cfg.epochs if cfg else 20)
     parser.add_argument("--batch-size", type=int, default=cfg.batch_size if cfg else 32)
     parser.add_argument(
-        "--learning-rate", type=float, default=cfg.learning_rate if cfg else 1e-3
+        "--learning-rate", type=float, default=cfg.learning_rate if cfg else 1e-4
     )
     parser.add_argument("--momentum", type=float, default=cfg.momentum if cfg else 0.9)
     parser.add_argument(

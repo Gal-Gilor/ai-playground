@@ -1,5 +1,8 @@
 """Fine-tune EfficientNet-B4 on the dog breed dataset via transfer learning.
 
+The backbone is frozen and its BatchNorm layers stay in inference mode, so the backbone keeps
+its ImageNet statistics.
+
 Usage (from project root):
     python -m scripts.train_classification_head
     python -m scripts.train_classification_head --epochs 1 --batch-size 16
@@ -198,6 +201,7 @@ def main() -> None:
         class_weights,
         classes,
         optimizer,
+        freeze_bn=True,
         checkpoint_metadata={
             "head_hidden_units": cfg.head_hidden_units,
             "head_dropout_rate": cfg.head_dropout_rate,
