@@ -1,7 +1,10 @@
 """Pydantic models that validate the pipeline `config.toml`."""
 
+from typing import Self
+
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import model_validator
 
 
 class VertexAIConfig(BaseModel):
@@ -60,6 +63,18 @@ class TrainingParametersConfig(BaseModel):
     head_epochs: int = Field(description="Maximum epochs for head training")
     head_batch_size: int = Field(description="Batch size for head training")
     head_learning_rate: float = Field(description="Adam learning rate for head training")
+    head_lr_patience: int = Field(
+        description="Epochs without validation-loss improvement before head training cuts the "
+        "learning rate"
+    )
+    head_lr_factor: float = Field(
+        gt=0,
+        lt=1,
+        description="Multiplier applied to the learning rate at each cut in head training",
+    )
+    head_lr_min_lr: float = Field(
+        ge=0, description="Floor the learning rate is never cut below in head training"
+    )
     head_weight_decay: float = Field(description="Adam weight decay for head training")
     head_hidden_units: int = Field(description="Units in the head's hidden layer")
     head_dropout_rate: float = Field(description="Dropout rate after the head's hidden layer")
@@ -72,6 +87,18 @@ class TrainingParametersConfig(BaseModel):
         le=1e-4,
         description="SGD learning rate for backbone fine-tuning; 1e-4 is the maximum",
     )
+    finetune_lr_patience: int = Field(
+        description="Epochs without validation-loss improvement before fine-tuning cuts the "
+        "learning rate"
+    )
+    finetune_lr_factor: float = Field(
+        gt=0,
+        lt=1,
+        description="Multiplier applied to the learning rate at each cut in fine-tuning",
+    )
+    finetune_lr_min_lr: float = Field(
+        ge=0, description="Floor the learning rate is never cut below in fine-tuning"
+    )
     finetune_momentum: float = Field(description="SGD momentum for backbone fine-tuning")
     finetune_weight_decay: float = Field(
         description="SGD weight decay for backbone fine-tuning"
@@ -82,6 +109,20 @@ class TrainingParametersConfig(BaseModel):
     finetune_early_stopping_patience: int = Field(
         description="Epochs without validation improvement before fine-tuning stops"
     )
+
+    @model_validator(mode="after")
+    def check_lr_patience_below_early_stopping(self) -> Self:
+        """Require each step to cut the learning rate before early stopping ends training."""
+        for step in ("head", "finetune"):
+            lr_patience = getattr(self, f"{step}_lr_patience")
+            stopping = getattr(self, f"{step}_early_stopping_patience")
+            if lr_patience >= stopping:
+                raise ValueError(
+                    f"{step}_lr_patience is {lr_patience} but {step}_early_stopping_patience "
+                    f"is {stopping}. The learning rate must be cut before training stops, "
+                    f"so lr_patience must be lower."
+                )
+        return self
 
 
 class Config(BaseModel):

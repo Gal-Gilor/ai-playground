@@ -134,6 +134,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weight-decay", type=float, default=cfg.weight_decay if cfg else 1e-4
     )
+    parser.add_argument(
+        "--lr-patience",
+        type=int,
+        default=cfg.lr_patience if cfg else 2,
+        help="ReduceLROnPlateau: epochs without validation-loss improvement before the cut",
+    )
+    parser.add_argument(
+        "--lr-factor",
+        type=float,
+        default=cfg.lr_factor if cfg else 0.5,
+        help="ReduceLROnPlateau: multiplier applied to the learning rate at each cut",
+    )
+    parser.add_argument(
+        "--lr-min-lr",
+        type=float,
+        default=cfg.lr_min_lr if cfg else 1e-6,
+        help="ReduceLROnPlateau: floor the learning rate is never cut below",
+    )
     parser.add_argument("--val-split", type=float, default=cfg.val_split if cfg else 0.1)
     parser.add_argument(
         "--normalize-mean",
@@ -230,6 +248,9 @@ def main() -> None:
         learning_rate=args.learning_rate,
         momentum=args.momentum,
         weight_decay=args.weight_decay,
+        lr_patience=args.lr_patience,
+        lr_factor=args.lr_factor,
+        lr_min_lr=args.lr_min_lr,
         val_split=args.val_split,
         normalize_mean=args.normalize_mean,
         normalize_std=args.normalize_std,
@@ -292,6 +313,9 @@ def main() -> None:
         "epochs": cfg.epochs,
         "batch_size": cfg.batch_size,
         "learning_rate": cfg.learning_rate,
+        "lr_patience": cfg.lr_patience,
+        "lr_factor": cfg.lr_factor,
+        "lr_min_lr": cfg.lr_min_lr,
         "weight_decay": cfg.weight_decay,
         "val_split": cfg.val_split,
         "early_stopping_patience": cfg.early_stopping_patience,
