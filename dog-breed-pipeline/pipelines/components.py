@@ -223,6 +223,9 @@ def train_head(
     epochs: int,
     batch_size: int,
     learning_rate: float,
+    lr_patience: int,
+    lr_factor: float,
+    lr_min_lr: float,
     weight_decay: float,
     hidden_units: int,
     dropout_rate: float,
@@ -236,6 +239,10 @@ def train_head(
         epochs (int): Maximum number of epochs.
         batch_size (int): Training batch size.
         learning_rate (float): Adam learning rate.
+        lr_patience (int): Epochs without validation-loss improvement before the learning
+            rate is cut.
+        lr_factor (float): Multiplier applied to the learning rate at each cut.
+        lr_min_lr (float): Floor the learning rate is never cut below.
         weight_decay (float): Adam weight decay.
         hidden_units (int): Units in the head's hidden layer.
         dropout_rate (float): Dropout rate after the head's hidden layer.
@@ -260,6 +267,12 @@ def train_head(
             batch_size,
             "--learning-rate",
             learning_rate,
+            "--lr-patience",
+            lr_patience,
+            "--lr-factor",
+            lr_factor,
+            "--lr-min-lr",
+            lr_min_lr,
             "--weight-decay",
             weight_decay,
             "--head-hidden-units",
@@ -279,6 +292,9 @@ def finetune_backbone(
     epochs: int,
     batch_size: int,
     learning_rate: float,
+    lr_patience: int,
+    lr_factor: float,
+    lr_min_lr: float,
     momentum: float,
     weight_decay: float,
     unfrozen_blocks: int,
@@ -293,6 +309,10 @@ def finetune_backbone(
         epochs (int): Maximum number of epochs.
         batch_size (int): Training batch size.
         learning_rate (float): SGD learning rate; 1e-4 is the maximum.
+        lr_patience (int): Epochs without validation-loss improvement before the learning
+            rate is cut.
+        lr_factor (float): Multiplier applied to the learning rate at each cut.
+        lr_min_lr (float): Floor the learning rate is never cut below.
         momentum (float): SGD momentum.
         weight_decay (float): SGD weight decay.
         unfrozen_blocks (int): Number of trailing backbone blocks to unfreeze.
@@ -319,6 +339,12 @@ def finetune_backbone(
             batch_size,
             "--learning-rate",
             learning_rate,
+            "--lr-patience",
+            lr_patience,
+            "--lr-factor",
+            lr_factor,
+            "--lr-min-lr",
+            lr_min_lr,
             "--momentum",
             momentum,
             "--weight-decay",
@@ -327,6 +353,38 @@ def finetune_backbone(
             unfrozen_blocks,
             "--early-stopping-patience",
             early_stopping_patience,
+        ],
+    )
+
+
+@dsl.container_component
+def evaluate_model(
+    dataset: Input[Dataset],
+    model: Input[Model],
+    evaluation: Output[Artifact],
+) -> dsl.ContainerSpec:
+    """Evaluate the fine-tuned model on the test split.
+
+    Args:
+        dataset (Input[Dataset]): Folder with test/<breed>/ images.
+        model (Input[Model]): Run folder from fine-tuning, with best.pth.
+        evaluation (Output[Artifact]): Output folder with predictions.csv and metrics.json.
+
+    Returns:
+        dsl.ContainerSpec: The image, command and arguments that run the step.
+    """
+    return dsl.ContainerSpec(
+        image="dog-breed-classifier",
+        command=["python", "-m", "scripts.evaluate_model_performance"],
+        args=[
+            "--test-directory",
+            f"{dataset.path}/test",
+            "--checkpoint-path",
+            f"{model.path}/best.pth",
+            "--output-csv",
+            f"{evaluation.path}/predictions.csv",
+            "--metrics-json",
+            f"{evaluation.path}/metrics.json",
         ],
     )
 

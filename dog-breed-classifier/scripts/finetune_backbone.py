@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def build_model(
     checkpoint_path: str | Path,
     num_unfrozen_blocks: int,
-) -> tuple[nn.Module, list[str]]:
+) -> tuple[nn.Module, list[str], dict[str, int | float]]:
     """Load a head-trained checkpoint and prepare the model for backbone fine-tuning.
 
     All parameters are frozen first, then the classifier head and the last
@@ -48,8 +48,10 @@ def build_model(
         num_unfrozen_blocks (int): Number of trailing `model.features` blocks to unfreeze.
 
     Returns:
-        tuple[nn.Module, list[str]]: A `(model, classes)` tuple where `classes` is the ordered
-            list of breed names stored in the checkpoint.
+        tuple[nn.Module, list[str], dict[str, int | float]]: A
+            `(model, classes, head_metadata)` tuple. `classes` is the ordered list of breed
+            names stored in the checkpoint. `head_metadata` holds `head_hidden_units` and
+            `head_dropout_rate`, for the checkpoints written by fine-tuning.
     """
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     classes: list[str] = checkpoint["classes"]
@@ -84,7 +86,11 @@ def build_model(
         f"Unfrozen last {num_unfrozen_blocks} feature block(s). "
         f"Trainable params: {trainable:,} / {total:,}"
     )
-    return model, classes
+    head_metadata = {
+        "head_hidden_units": head_hidden_units,
+        "head_dropout_rate": head_dropout_rate,
+    }
+    return model, classes, head_metadata
 
 
 def parse_args() -> argparse.Namespace:
@@ -127,6 +133,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--momentum", type=float, default=cfg.momentum if cfg else 0.9)
     parser.add_argument(
         "--weight-decay", type=float, default=cfg.weight_decay if cfg else 1e-4
+    )
+    parser.add_argument(
+        "--lr-patience",
+        type=int,
+        default=cfg.lr_patience if cfg else 2,
+        help="ReduceLROnPlateau: epochs without validation-loss improvement before the cut",
+    )
+    parser.add_argument(
+        "--lr-factor",
+        type=float,
+        default=cfg.lr_factor if cfg else 0.5,
+        help="ReduceLROnPlateau: multiplier applied to the learning rate at each cut",
+    )
+    parser.add_argument(
+        "--lr-min-lr",
+        type=float,
+        default=cfg.lr_min_lr if cfg else 1e-6,
+        help="ReduceLROnPlateau: floor the learning rate is never cut below",
     )
     parser.add_argument("--val-split", type=float, default=cfg.val_split if cfg else 0.1)
     parser.add_argument(
@@ -224,6 +248,9 @@ def main() -> None:
         learning_rate=args.learning_rate,
         momentum=args.momentum,
         weight_decay=args.weight_decay,
+        lr_patience=args.lr_patience,
+        lr_factor=args.lr_factor,
+        lr_min_lr=args.lr_min_lr,
         val_split=args.val_split,
         normalize_mean=args.normalize_mean,
         normalize_std=args.normalize_std,
@@ -250,7 +277,9 @@ def main() -> None:
     logger.info(f"Using device: {device}")
 
     train_loader, val_loader, classes, class_weights = get_dataloaders(cfg)
-    model, checkpoint_classes = build_model(cfg.checkpoint_path, cfg.num_unfrozen_blocks)
+    model, checkpoint_classes, head_metadata = build_model(
+        cfg.checkpoint_path, cfg.num_unfrozen_blocks
+    )
 
     if classes != list(checkpoint_classes):
         raise ValueError(
@@ -275,6 +304,7 @@ def main() -> None:
         classes,
         optimizer,
         freeze_bn=True,
+        checkpoint_metadata=head_metadata,
     )
 
     params = {
@@ -283,6 +313,9 @@ def main() -> None:
         "epochs": cfg.epochs,
         "batch_size": cfg.batch_size,
         "learning_rate": cfg.learning_rate,
+        "lr_patience": cfg.lr_patience,
+        "lr_factor": cfg.lr_factor,
+        "lr_min_lr": cfg.lr_min_lr,
         "weight_decay": cfg.weight_decay,
         "val_split": cfg.val_split,
         "early_stopping_patience": cfg.early_stopping_patience,

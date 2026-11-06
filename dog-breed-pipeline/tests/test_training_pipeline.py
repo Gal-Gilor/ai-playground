@@ -44,3 +44,9 @@ def test_finetune_learning_rate_above_maximum_is_rejected() -> None:
     """A fine-tune learning rate above 1e-4 fails before any job is submitted."""
     with pytest.raises(ValidationError, match="finetune_learning_rate"):
         validated_overrides(["finetune_learning_rate=1e-3"], config.training_parameters)
+
+
+def test_lr_patience_must_be_below_early_stopping_patience() -> None:
+    """A learning-rate patience at or above the early-stopping patience is rejected."""
+    with pytest.raises(ValidationError, match="finetune"):
+        validated_overrides(["finetune_lr_patience=5"], config.training_parameters)

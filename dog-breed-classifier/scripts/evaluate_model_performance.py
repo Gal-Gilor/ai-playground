@@ -208,7 +208,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--metrics-json",
-        type=str,
+        type=Path,
         default=None,
         help="Path to write the overall test accuracy (percent) as JSON",
     )
@@ -287,12 +287,14 @@ def main() -> None:
     df = run_inference(model, dataloader, classes, device)
 
     output_csv = args.output_csv or args.checkpoint_path.parent / "results.csv"
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_csv, index=False)
     logger.info(f"Results saved to {output_csv}")
 
     print_summary(df)
 
     if args.metrics_json:
+        args.metrics_json.parent.mkdir(parents=True, exist_ok=True)
         with open(args.metrics_json, "w") as f:
             json.dump({"accuracy": df["correct"].mean() * 100}, f)
 
