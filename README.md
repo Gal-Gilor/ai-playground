@@ -17,9 +17,7 @@ A repository for personal AI and Machine Learning projects. Each project is self
 
 The raw dataset used across both projects is publicly available on Google Cloud Storage at [pooch-perfect-public](https://console.cloud.google.com/storage/browser/pooch-perfect-public).
 
-## Portfolio
-
-Other repositories:
+## Other Projects
 
 - [markdown-chunkify](https://github.com/Gal-Gilor/markdown-chunkify) ([PyPI](https://pypi.org/project/markdown-chunkify/)): Python library that splits Markdown into hierarchical sections, keeping code blocks intact and giving each section an id, a parent link and its position in the source, ready for RAG and graph pipelines. Install with `pip install markdown-chunkify`.
 
