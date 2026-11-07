@@ -103,7 +103,8 @@ class BaseTrainingConfig(BaseModel):
     color_jitter_saturation: float = 0.2
     color_jitter_hue: float = 0.1
     center_crop_size: int = Field(
-        default=300, description="Center crop size applied before training transforms"
+        default=380,
+        description="Center crop size before the training transforms; 380 for EfficientNet-B4",
     )
 
 

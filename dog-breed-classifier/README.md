@@ -41,16 +41,16 @@ EfficientNet-B4 pretrained on ImageNet, fine-tuned in two stages. The backbone e
 
 ```
 EfficientNet-B4 (1792-dim backbone output)
-  → Linear(1792, 512) → ReLU → Dropout(0.3) → Linear(512, 120)
+  → Dropout(0.4) (torchvision classifier) → Linear(1792, 512) → ReLU → Dropout(0.3) → Linear(512, 120)
 ```
 
 The 380×380 input matches EfficientNet-B4's native resolution, derived from its compound scaling formula (224 × 1.15^4 ≈ 380). Using a different size either discards spatial information or forces upsampling the architecture wasn't designed for.
 
 ### Stage 1 — train_classification_head
 
-The backbone is frozen. Only the classifier head is trained.
+The backbone is frozen and runs in inference mode: no dropout, stochastic depth or BatchNorm updates. Only the classifier head is trained.
 
-- Adam, lr=1e-3, up to 15 epochs, early stopping (patience 5)
+- Adam, lr=1e-3, up to 25 epochs, early stopping (patience 5)
 - ReduceLROnPlateau (factor 0.5, patience 2)
 - Label smoothing 0.1, class-weighted loss
 
@@ -60,7 +60,7 @@ Achieves 82.69% accuracy on the test set (1744/2109 correct).
 
 ### Stage 2 — finetune_backbone
 
-Loads the best Stage 1 checkpoint, unfreezes the last 2 EfficientNet-B4 blocks, and trains the unfrozen blocks jointly with the head.
+Loads the best Stage 1 checkpoint, unfreezes the last 2 EfficientNet-B4 blocks, and trains the unfrozen blocks jointly with the head. It first evaluates the starting checkpoint as epoch 0, so `best.pth` is never worse than the head it started from. The frozen blocks run in inference mode. The unfrozen blocks keep stochastic depth.
 
 - SGD with momentum (0.9), lr=1e-4
 - BatchNorm layers kept in eval mode to preserve ImageNet statistics
