@@ -92,7 +92,18 @@ The experiment name must differ from the pipeline names, `dog-breed-data` and `d
 
 ## Results
 
+Before this pipeline, the classifier was trained locally with 15 head epochs. The head reached 82.69% test accuracy (1744 of 2109 images), and fine-tuning raised it to 84.73% (1787 of 2109). Those runs used an earlier test split of 2,109 images.
+
 The training run `dog-breed-training-20261106221723`, on commit `7fff4e9` with the default parameters, reached 91.53% test accuracy (1923 of 2101 images). The head's validation accuracy peaked at 91.48% in its last epoch, 25. Fine-tuning stopped early after 5 epochs without beating its starting checkpoint, so the evaluated model is the head.
+
+The largest gain came from keeping the frozen backbone's BatchNorm layers in inference mode while the head trains. Setting `requires_grad=False` stops gradient updates, but a BatchNorm layer in training mode still normalizes each batch with that batch's statistics and overwrites the running mean and variance it learned on ImageNet. The head then trains on features that shift from batch to batch and are normalized differently at evaluation. Two runs with the same learning rate, batch size and split show the effect on validation accuracy:
+
+| Run | BatchNorm in the frozen backbone | Head epochs | Val accuracy |
+|-----|----------------------------------|-------------|--------------|
+| `dog-breed-training-20261031182835` | training mode | 2 | 77.56% |
+| `dog-breed-training-20261102222826` | inference mode | 1 | 86.54% |
+
+The same series also raised the head to 25 epochs and turned off dropout and stochastic depth in the frozen layers, so not all of the gain over 84.73% comes from BatchNorm.
 
 ## Image tags and caching
 
