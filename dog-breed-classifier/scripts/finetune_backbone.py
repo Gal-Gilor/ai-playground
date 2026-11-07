@@ -196,7 +196,7 @@ def parse_args() -> argparse.Namespace:
         "--color-jitter-hue", type=float, default=cfg.color_jitter_hue if cfg else 0.1
     )
     parser.add_argument(
-        "--center-crop-size", type=int, default=cfg.center_crop_size if cfg else 300
+        "--center-crop-size", type=int, default=cfg.center_crop_size if cfg else 380
     )
     parser.add_argument(
         "--early-stopping-patience",
@@ -293,6 +293,9 @@ def main() -> None:
         momentum=cfg.momentum,
         weight_decay=cfg.weight_decay,
     )
+    # `[:-0]` is empty, so a zero-block run freezes all of `model.features`.
+    n = cfg.num_unfrozen_blocks
+    frozen_features = model.features[:-n] if n > 0 else model.features
     metrics = train(
         model,
         train_loader,
@@ -304,6 +307,8 @@ def main() -> None:
         classes,
         optimizer,
         freeze_bn=True,
+        frozen_modules=frozen_features,
+        evaluate_first=True,
         checkpoint_metadata=head_metadata,
     )
 

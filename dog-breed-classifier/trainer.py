@@ -151,6 +151,40 @@ def save_curves(history: dict[str, list[float]], run_dir: Path) -> None:
     logger.info(f"Saved training curves to {run_dir / 'curves.jpg'}")
 
 
+def _validate(
+    model: nn.Module,
+    loader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+    desc: str,
+) -> tuple[float, float]:
+    """Run one validation pass with the model in eval mode.
+
+    Args:
+        model (nn.Module): The model to evaluate.
+        loader (DataLoader): DataLoader for the validation split.
+        criterion (nn.Module): Loss function.
+        device (torch.device): Device to run on.
+        desc (str): Progress bar label.
+
+    Returns:
+        tuple[float, float]: Average loss and accuracy (percent).
+    """
+    model.eval()
+    total_loss = 0.0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in tqdm(loader, desc=desc, leave=False):
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            total_loss += loss.item() * images.size(0)
+            correct += (outputs.argmax(dim=1) == labels).sum().item()
+            total += images.size(0)
+    return total_loss / total, 100.0 * correct / total
+
+
 def train(
     model: nn.Module,
     train_loader: DataLoader,
@@ -163,6 +197,8 @@ def train(
     optimizer: torch.optim.Optimizer,
     *,
     freeze_bn: bool = False,
+    frozen_modules: nn.Module | None = None,
+    evaluate_first: bool = False,
     checkpoint_metadata: dict | None = None,
 ) -> dict[str, float | int]:
     """Train the model, saving checkpoints and curves into run_dir.
@@ -184,12 +220,21 @@ def train(
         optimizer (torch.optim.Optimizer): Optimizer to use for training.
         freeze_bn (bool): If True, keep BatchNorm layers in eval mode during training
             to preserve ImageNet statistics (used during backbone fine-tuning).
+        frozen_modules (nn.Module | None): Part of the model that stays in eval mode
+            during training. This turns off dropout, stochastic depth and BatchNorm
+            updates there. Applied after `model.train()` at the start of every epoch.
+        evaluate_first (bool): If True, validate once before epoch 1 and log it as epoch 0.
+            That result is the best so far and is saved as `best.pth` with `epoch: 0`.
+            Early-stopping patience counts from it.
         checkpoint_metadata (dict | None): Extra entries merged into every saved checkpoint,
             such as the head architecture needed to rebuild the model.
 
     Returns:
         dict[str, float | int]: Best-epoch metrics: best_epoch, best_train_loss,
-            best_train_acc, best_val_loss, best_val_acc.
+            best_train_acc, best_val_loss, best_val_acc. If `evaluate_first` is set and
+            no epoch beats epoch 0, best_epoch is 0, the validation values come from
+            epoch 0, and best_train_loss and best_train_acc are left out because no
+            training happened.
     """
     model.to(device)
     criterion = nn.CrossEntropyLoss(
@@ -205,8 +250,8 @@ def train(
 
     best_val_loss = float("inf")
     best_epoch = 0
-    best_train_loss = float("inf")
-    best_train_acc = 0.0
+    best_train_loss: float | None = None
+    best_train_acc: float | None = None
     best_val_acc = 0.0
     patience_counter = 0
     best_path = run_dir / "best.pth"
@@ -218,11 +263,35 @@ def train(
         "val_acc": [],
     }
 
+    def make_checkpoint(epoch: int, val_loss: float, val_acc: float) -> dict:
+        return {
+            "model_state_dict": model.state_dict(),
+            "classes": classes,
+            "epoch": epoch,
+            "val_loss": val_loss,
+            "val_acc": val_acc,
+            **(checkpoint_metadata or {}),
+        }
+
+    if evaluate_first:
+        best_val_loss, best_val_acc = _validate(
+            model, val_loader, criterion, device, desc="Epoch 0 [val]"
+        )
+        logger.info(
+            f"Epoch 0 (before training): val_loss={best_val_loss:.3f} "
+            f"val_acc={best_val_acc:.1f}%"
+        )
+        torch.save(make_checkpoint(0, best_val_loss, best_val_acc), best_path)
+        # Start the scheduler's patience from the same point as early stopping.
+        scheduler.step(best_val_loss)
+
     for epoch in range(1, cfg.epochs + 1):
         # --- train ---
         model.train()
         if freeze_bn:
             set_bn_eval(model)
+        if frozen_modules is not None:
+            frozen_modules.eval()
         train_loss = 0.0
         train_correct = 0
         train_total = 0
@@ -240,25 +309,12 @@ def train(
             train_total += images.size(0)
 
         # --- eval ---
-        model.eval()
-        val_loss = 0.0
-        val_correct = 0
-        val_total = 0
-        with torch.no_grad():
-            for images, labels in tqdm(
-                val_loader, desc=f"Epoch {epoch}/{cfg.epochs} [val]", leave=False
-            ):
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item() * images.size(0)
-                val_correct += (outputs.argmax(dim=1) == labels).sum().item()
-                val_total += images.size(0)
+        avg_val_loss, val_acc = _validate(
+            model, val_loader, criterion, device, desc=f"Epoch {epoch}/{cfg.epochs} [val]"
+        )
 
         avg_train_loss = train_loss / train_total
         train_acc = 100.0 * train_correct / train_total
-        avg_val_loss = val_loss / val_total
-        val_acc = 100.0 * val_correct / val_total
 
         history["train_loss"].append(avg_train_loss)
         history["val_loss"].append(avg_val_loss)
@@ -271,14 +327,7 @@ def train(
             f"val_loss={avg_val_loss:.3f} val_acc={val_acc:.1f}%"
         )
 
-        checkpoint = {
-            "model_state_dict": model.state_dict(),
-            "classes": classes,
-            "epoch": epoch,
-            "val_loss": avg_val_loss,
-            "val_acc": val_acc,
-            **(checkpoint_metadata or {}),
-        }
+        checkpoint = make_checkpoint(epoch, avg_val_loss, val_acc)
         torch.save(checkpoint, latest_path)
 
         if avg_val_loss < best_val_loss:
@@ -302,10 +351,10 @@ def train(
         logger.info(f"lr={current_lr:.2e}")
 
     save_curves(history, run_dir)
-    return {
-        "best_epoch": best_epoch,
-        "best_train_loss": round(best_train_loss, 4),
-        "best_train_acc": round(best_train_acc, 2),
-        "best_val_loss": round(best_val_loss, 4),
-        "best_val_acc": round(best_val_acc, 2),
-    }
+    metrics: dict[str, float | int] = {"best_epoch": best_epoch}
+    if best_train_loss is not None and best_train_acc is not None:
+        metrics["best_train_loss"] = round(best_train_loss, 4)
+        metrics["best_train_acc"] = round(best_train_acc, 2)
+    metrics["best_val_loss"] = round(best_val_loss, 4)
+    metrics["best_val_acc"] = round(best_val_acc, 2)
+    return metrics

@@ -38,7 +38,7 @@ def build_model(
     """Load pretrained EfficientNet-B4 and replace the classifier head.
 
     The convolutional backbone (model.features) is frozen; the classifier head is trained.
-    The head is: Dropout(0.3) → Linear(1792, head_hidden_units) → ReLU →
+    The head is: Dropout(0.4) → Linear(1792, head_hidden_units) → ReLU →
     Dropout(head_dropout_rate) → Linear(head_hidden_units, num_classes).
 
     Args:
@@ -222,7 +222,7 @@ def main() -> None:
         class_weights,
         classes,
         optimizer,
-        freeze_bn=True,
+        frozen_modules=model.features,
         checkpoint_metadata={
             "head_hidden_units": cfg.head_hidden_units,
             "head_dropout_rate": cfg.head_dropout_rate,

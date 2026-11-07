@@ -46,7 +46,7 @@ head_hidden_units = 512
 head_dropout_rate = 0.3
 
 # Training hyperparameters
-epochs = 15
+epochs = 25
 batch_size = 32
 learning_rate = 1e-3
 weight_decay = 1e-4
@@ -89,3 +89,4 @@ val_split = 0.1
 lr_patience = 2
 lr_factor = 0.5
 lr_min_lr = 1e-6
+center_crop_size = 380
