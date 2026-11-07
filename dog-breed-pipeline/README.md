@@ -90,6 +90,10 @@ The pipeline run itself carries the `git_commit` and `git_dirty` labels.
 
 The experiment name must differ from the pipeline names, `dog-breed-data` and `dog-breed-training`, because Vertex AI Experiments and Vertex AI Pipelines share one Vertex ML Metadata ID space. An experiment that reused a pipeline name made the submit fail with "Context to be updated has a different schema title".
 
+## Results
+
+The training run `dog-breed-training-20261106221723`, on commit `7fff4e9` with the default parameters, reached 91.53% test accuracy (1923 of 2101 images). The head's validation accuracy peaked at 91.48% in its last epoch, 25. Fine-tuning stopped early after 5 epochs without beating its starting checkpoint, so the evaluated model is the head.
+
 ## Image tags and caching
 
 An image is tagged with the short SHA of the latest commit that touched its project folder. If the folder has uncommitted or untracked changes, the tag is `<sha>-dirty-<UTC timestamp>` instead, so every build of in-progress code gets a new tag. Caching is on for every run, and KFP reuses a step only when its image and inputs are unchanged. A rebuilt image with a new tag therefore reruns every step that uses it, which for the classifier image means steps 2 to 8.

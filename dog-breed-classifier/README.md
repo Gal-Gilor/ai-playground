@@ -56,7 +56,7 @@ The backbone is frozen and runs in inference mode: no dropout, stochastic depth 
 
 Adam works well here because the head is randomly initialized and gradients vary significantly across parameters early in training. ReduceLROnPlateau halves the learning rate whenever validation loss stops improving for 2 epochs, which is more reliable than a fixed schedule when you don't know in advance when the model will plateau.
 
-Achieves 82.69% accuracy on the test set (1744/2109 correct).
+In the Vertex AI run `dog-breed-training-20261106221723`, the head reached its best validation accuracy, 91.48%, at epoch 25.
 
 ### Stage 2 — finetune_backbone
 
@@ -68,7 +68,7 @@ Loads the best Stage 1 checkpoint, unfreezes the last 2 EfficientNet-B4 blocks, 
 
 SGD at lr=1e-4 keeps updates to pre-trained weights small. SGD also generalizes better than Adam on small datasets. Adam's adaptive rates tend to overfit when data is limited. BatchNorm layers stay in eval mode so their running statistics, computed from ImageNet's 1.2M images, don't get replaced by statistics from 11k dog images.
 
-Achieves 84.73% accuracy on the test set (1787/2109 correct).
+In the same run, fine-tuning stopped early after 5 epochs without beating epoch 0, so `best.pth` is the Stage 1 head. It classifies 91.53% of the test set correctly (1923/2101).
 
 ## Setup
 
