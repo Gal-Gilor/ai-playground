@@ -1,6 +1,6 @@
 # Dog Breed Classification
 
-Pooch Perfect is an app I'm building that tells you what dog breed you look most like. This repo is a supporting project — the training pipeline for the breed classifier that will power it.
+This project trains an EfficientNet-B4 classifier that predicts a dog's breed from a photo.
 
 The data comes from the [Kaggle dog-breed-identification competition](https://www.kaggle.com/competitions/dog-breed-identification): 10,222 images across 120 breeds. The raw images needed cleaning before training. Some contained people, some were blurry, some had multiple dogs, and some had both dogs and people. The [dog-detection](https://github.com/Gal-Gilor/ai-playground/tree/main/dog-detection) pipeline handles that first: it detects the dogs in each image and records their bounding boxes. Stage 1 here unpacks those bounding boxes (one row each), Stage 2 crops to 380×380 and strips the background, yielding 11,077 crops after skipping 465 that detection missed.
 

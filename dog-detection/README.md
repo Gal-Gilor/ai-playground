@@ -1,8 +1,8 @@
-# Dog Detection: Dataset Preparation Pipeline for Pooch Perfect
+# Dog Detection: Dataset Preparation Pipeline
 
 ## Overview
 
-[Pooch Perfect](https://github.com/Gal-Gilor/pooch-perfect) is an application that uses multiple models to determine which dog breed a person most resembles. Training the dog breed classifier requires images cropped to a single dog. This repository handles the data preparation workflow: uploading and downloading images to and from GCS, and running YOLO26 inference to detect the dogs in each image and store their bounding box coordinates in `data/labels.csv`, which originally contains only image filenames and breed labels.
+Training the [dog breed classifier](../dog-breed-classifier) requires images cropped to a single dog. This repository handles the data preparation workflow: uploading and downloading images to and from GCS, and running YOLO26 inference to detect the dogs in each image and store their bounding box coordinates in `data/labels.csv`, which originally contains only image filenames and breed labels.
 
 ## How it works
 
